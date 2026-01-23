@@ -1,8 +1,15 @@
 use crate::models::common::pagination::PaginationInfo;
 use crate::models::homeworks::entities::Homework;
 use serde::Serialize;
-use serde_json::Value;
 use ts_rs::TS;
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/homework.ts")]
+pub struct HomeworkCreator {
+    pub id: i64,
+    pub username: String,
+    pub profile_name: Option<String>,
+}
 
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "../frontend/src/types/generated/homework.ts")]
@@ -17,7 +24,7 @@ pub struct HomeworkResponse {
     pub attachments: Vec<Option<String>>,
     pub submission_count: i32,
     pub status: String,
-    pub created_by: Value,
+    pub created_by: HomeworkCreator,
     pub created_at: String,
     pub updated_at: String,
 }
