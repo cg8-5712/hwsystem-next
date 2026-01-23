@@ -5,6 +5,7 @@ use tracing::{error, info};
 
 use super::ClassService;
 use crate::middlewares::RequireJWT;
+use crate::models::class_users::entities::ClassUserRole;
 use crate::models::classes::requests::CreateClassRequest;
 use crate::models::users::entities::UserRole;
 use crate::models::{ApiResponse, ErrorCode};
@@ -34,8 +35,20 @@ pub async fn create_class(
     }
 
     // 创建班级
+    let teacher_id = class_data.teacher_id;
     match storage.create_class(class_data).await {
         Ok(class) => {
+            // 将创建者（教师）加入 class_users 表
+            if let Err(e) = storage
+                .join_class(teacher_id, class.id, ClassUserRole::Teacher)
+                .await
+            {
+                error!(
+                    "Failed to add teacher {} to class_users for class {}: {}",
+                    teacher_id, class.id, e
+                );
+            }
+
             info!("Class {} created successfully by {}", class.name, uid);
             Ok(HttpResponse::Created()
                 .json(ApiResponse::success(class, "Class created successfully")))
