@@ -201,7 +201,8 @@ impl WebSocketService {
                             if let Ok(ws_msg) = serde_json::from_str::<WsMessage>(&text) {
                                 match ws_msg {
                                     WsMessage::Ping => {
-                                        let pong = serde_json::to_string(&WsMessage::Pong).unwrap();
+                                        let pong = serde_json::to_string(&WsMessage::Pong)
+                                            .unwrap_or_else(|_| r#"{"type":"pong"}"#.to_string());
                                         if session.text(pong).await.is_err() {
                                             break;
                                         }

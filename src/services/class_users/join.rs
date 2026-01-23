@@ -45,18 +45,23 @@ pub async fn join_class(
         }
     };
 
-    if class.is_none() {
-        return Ok(HttpResponse::NotFound().json(ApiResponse::error_empty(
-            ErrorCode::ClassInviteCodeInvalid,
-            "Class not found or invite code is invalid",
-        )));
-    }
-    if class_user.is_some() {
-        return Ok(HttpResponse::Conflict().json(ApiResponse::error(
-            ErrorCode::ClassAlreadyJoined,
-            class.unwrap(),
-            "User has already joined the class",
-        )));
+    match (class, class_user) {
+        (None, _) => {
+            return Ok(HttpResponse::NotFound().json(ApiResponse::error_empty(
+                ErrorCode::ClassInviteCodeInvalid,
+                "Class not found or invite code is invalid",
+            )));
+        }
+        (Some(c), Some(_)) => {
+            return Ok(HttpResponse::Conflict().json(ApiResponse::error(
+                ErrorCode::ClassAlreadyJoined,
+                c,
+                "User has already joined the class",
+            )));
+        }
+        (Some(_), None) => {
+            // 继续执行加入逻辑
+        }
     }
 
     match storage

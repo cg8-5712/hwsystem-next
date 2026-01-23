@@ -17,16 +17,24 @@ static OBJECT_CACHE_REGISTRY: Lazy<RwLock<HashMap<String, ObjectCacheConstructor
 
 pub fn register_object_cache_plugin<S: Into<String>>(name: S, constructor: ObjectCacheConstructor) {
     let name = name.into();
-    let mut registry = OBJECT_CACHE_REGISTRY.write().unwrap();
+    let mut registry = OBJECT_CACHE_REGISTRY
+        .write()
+        .expect("Cache registry lock poisoned");
     registry.insert(name, constructor);
 }
 
 pub fn get_object_cache_plugin(name: &str) -> Option<ObjectCacheConstructor> {
-    OBJECT_CACHE_REGISTRY.read().unwrap().get(name).cloned()
+    OBJECT_CACHE_REGISTRY
+        .read()
+        .expect("Cache registry lock poisoned")
+        .get(name)
+        .cloned()
 }
 
 pub fn debug_object_cache_registry() {
-    let registry = OBJECT_CACHE_REGISTRY.read().unwrap();
+    let registry = OBJECT_CACHE_REGISTRY
+        .read()
+        .expect("Cache registry lock poisoned");
     if registry.is_empty() {
         tracing::debug!("No object cache plugins registered.");
     } else {

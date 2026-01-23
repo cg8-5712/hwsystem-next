@@ -165,13 +165,15 @@ async fn extract_and_validate_jwt(req: &ServiceRequest) -> Result<entities::User
 
     // 将用户信息存入缓存
     let app_config = AppConfig::get();
-    cache
-        .insert_raw(
-            format!("user:{token}"),
-            serde_json::to_string(&user).unwrap(),
-            app_config.cache.default_ttl,
-        )
-        .await;
+    if let Ok(user_json) = serde_json::to_string(&user) {
+        cache
+            .insert_raw(
+                format!("user:{token}"),
+                user_json,
+                app_config.cache.default_ttl,
+            )
+            .await;
+    }
 
     Ok(user)
 }
