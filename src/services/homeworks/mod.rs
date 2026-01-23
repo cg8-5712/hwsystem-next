@@ -2,6 +2,7 @@ pub mod create;
 pub mod delete;
 pub mod detail;
 pub mod list;
+pub mod stats;
 pub mod update;
 
 use actix_web::{HttpRequest, HttpResponse, Result as ActixResult};
@@ -73,5 +74,13 @@ impl HomeworkService {
         homework_id: i64,
     ) -> ActixResult<HttpResponse> {
         delete::delete_homework(self, request, homework_id).await
+    }
+
+    pub async fn get_homework_stats(
+        &self,
+        request: &HttpRequest,
+        homework_id: i64,
+    ) -> ActixResult<HttpResponse> {
+        stats::get_homework_stats(self, request, homework_id).await
     }
 }

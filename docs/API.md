@@ -576,6 +576,43 @@ Authorization: Bearer <access_token>
 
 **权限**：班级教师
 
+### 6.6 GET /homeworks/{id}/stats
+
+获取作业统计。
+
+**权限**：班级教师 或 课代表
+
+**响应**：
+```json
+{
+    "homework_id": 1,
+    "total_students": 30,
+    "submitted_count": 25,
+    "graded_count": 20,
+    "late_count": 3,
+    "submission_rate": 83.33,
+    "score_stats": {
+        "average": 85.5,
+        "max": 98.0,
+        "min": 62.0
+    },
+    "score_distribution": [
+        { "range": "90-100", "count": 5 },
+        { "range": "80-89", "count": 8 },
+        { "range": "70-79", "count": 4 },
+        { "range": "60-69", "count": 2 },
+        { "range": "0-59", "count": 1 }
+    ],
+    "unsubmitted_students": [
+        {
+            "id": 1,
+            "username": "student1",
+            "profile_name": "张三"
+        }
+    ]
+}
+```
+
 ---
 
 ## 七、提交管理

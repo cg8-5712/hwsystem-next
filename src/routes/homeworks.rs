@@ -64,6 +64,16 @@ pub async fn delete_homework(req: HttpRequest, path: web::Path<i64>) -> ActixRes
         .await
 }
 
+// 获取作业统计
+pub async fn get_homework_stats(
+    req: HttpRequest,
+    path: web::Path<i64>,
+) -> ActixResult<HttpResponse> {
+    HOMEWORK_SERVICE
+        .get_homework_stats(&req, path.into_inner())
+        .await
+}
+
 // 配置路由
 pub fn configure_homeworks_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -73,6 +83,7 @@ pub fn configure_homeworks_routes(cfg: &mut web::ServiceConfig) {
             .route("", web::post().to(create_homework))
             .route("/{id}", web::get().to(get_homework))
             .route("/{id}", web::put().to(update_homework))
-            .route("/{id}", web::delete().to(delete_homework)),
+            .route("/{id}", web::delete().to(delete_homework))
+            .route("/{id}/stats", web::get().to(get_homework_stats)),
     );
 }
