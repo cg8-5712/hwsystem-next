@@ -6,6 +6,17 @@ license = "MIT"
 authors = ["AptS-1547 <apts-1547@esaps.net>", "Cg8-5712 <cg8.5712@gmail.com>"]
 edition = "2024"
 
+[workspace]
+members = [".", "migration"]
+
+[lib]
+name = "rust_hwsystem_next"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rust-hwsystem-next"
+path = "src/main.rs"
+
 # 优化配置
 [profile.release]
 opt-level = "s"
@@ -32,17 +43,12 @@ num_cpus = "1.17.0"
 tokio = { version = "1.45.1", default-features = false, features = ["rt-multi-thread", "macros"] }
 tracing = "0.1.41"
 chrono = { version = "0.4.41", default-features = false, features = ["clock", "serde"] }
-env = "1.0.1"
 rustls = "0.23.28"
 redis = { version = "0.32.3", features = ["tokio-comp", "tokio-rustls-comp"] }
 async-trait = "0.1.88"
 once_cell = "1.21.3"
-sqlx = { version = "0.8.6", features = ["runtime-tokio", "tls-rustls", "sqlite", "postgres", "mysql", "chrono"] }
 ctor = "0.4.2"
 argon2 = "0.5"
-sha2 = "0.10"
-serde_with = "3.14.0"
-base64 = "0.22.1"
 futures-util = "0.3.31"
 actix-cors = "0.7.1"
 dashmap = "6.1.0"
@@ -50,8 +56,12 @@ moka = { version = "0.12.10", features = ["future"] }
 actix-service = "2.0.3"
 config = "0.15.12"
 regex = "1.11.1"
-futures = "0.3.31"
 actix-multipart = "0.7.2"
 uuid = "1.17.0"
 rand = "0.9.1"
 human-panic = "2.0.3"
+paste = "1.0"
+migration = { path = "migration" }
+sea-orm = { version = "2.0.0-rc", features = ["sqlx-sqlite", "sqlx-postgres", "sqlx-mysql", "runtime-tokio-rustls", "macros"] }
+rust-embed = "8.11.0"
+ts-rs = { version = "11.1", features = ["chrono-impl", "serde-json-impl"] }

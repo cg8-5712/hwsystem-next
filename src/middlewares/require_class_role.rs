@@ -48,7 +48,7 @@ use crate::{
         class_users::entities::{ClassUser, ClassUserRole},
         users::entities::{User, UserRole},
     },
-    repository::Storage,
+    storage::Storage,
 };
 
 use super::create_error_response;

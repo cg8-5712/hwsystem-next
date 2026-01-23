@@ -42,12 +42,10 @@ refresh_token_expiry = 7
 refresh_token_remember_me_expiry = 30
 
 [database]
-# 数据库后端: sqlite, postgres, mysql
-type = "sqlite"
-# 数据库连接 URL
-# Sqlite："hwsystem.db" 或 "./hwsystem.db"
-# MySQL/MariaDB："mysql://user:password@localhost/hwsystem"
-# PostgreSQL："postgresql://user:password@localhost/hwsystem"
+# 数据库连接 URL（从 URL 自动推断类型）
+# SQLite: "hwsystem.db" 或 "sqlite://hwsystem.db"
+# MySQL/MariaDB: "mysql://user:password@localhost/hwsystem"
+# PostgreSQL: "postgres://user:password@localhost/hwsystem"
 url = "hwsystem.db"
 # 连接池大小
 pool_size = 10

@@ -1,13 +1,13 @@
 use actix_web::{HttpRequest, HttpResponse, Result as ActixResult, web};
 use once_cell::sync::Lazy;
 
-use crate::domain::ClassUserService;
 use crate::middlewares;
 use crate::models::class_users::entities::ClassUserRole;
 use crate::models::class_users::requests::{
     ClassUserListParams, JoinClassRequest, UpdateClassUserRequest,
 };
 use crate::models::users::entities::UserRole;
+use crate::services::ClassUserService;
 use crate::utils::SafeClassIdI64;
 
 use crate::define_safe_i64_extractor;

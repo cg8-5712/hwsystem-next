@@ -3,8 +3,8 @@ use moka::future::Cache;
 use tracing::debug;
 
 use crate::cache::{CacheResult, ObjectCache};
+use crate::config::AppConfig;
 use crate::declare_object_cache_plugin;
-use crate::system::app_config::AppConfig;
 
 declare_object_cache_plugin!("moka", MokaCacheWrapper);
 

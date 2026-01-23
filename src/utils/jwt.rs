@@ -1,4 +1,4 @@
-use crate::system::app_config::AppConfig;
+use crate::config::AppConfig;
 use actix_web::cookie::{Cookie, SameSite};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};

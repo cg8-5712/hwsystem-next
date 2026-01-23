@@ -1,10 +1,12 @@
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use crate::models::ErrorCode;
 
 // 统一的API响应结构
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ApiResponse<T> {
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/api.ts")]
+pub struct ApiResponse<T: TS> {
     pub code: i32,
     pub message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -12,7 +14,7 @@ pub struct ApiResponse<T> {
     pub timestamp: chrono::DateTime<chrono::Utc>,
 }
 
-impl<T> ApiResponse<T> {
+impl<T: TS> ApiResponse<T> {
     pub fn success(data: T, message: impl Into<String>) -> Self {
         Self {
             code: ErrorCode::Success as i32,

@@ -1,11 +1,10 @@
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
-
-use crate::sqlx_enum_type;
+use ts_rs::TS;
 
 // 用户角色
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, TS)]
 #[serde(rename_all = "snake_case")]
+#[ts(export, export_to = "../frontend/src/types/generated/user.ts")]
 pub enum UserRole {
     User,    // 普通用户
     Teacher, // 教师
@@ -71,13 +70,10 @@ impl std::str::FromStr for UserRole {
     }
 }
 
-// 分别为 PostgreSQL 和 SQLite 实现
-sqlx_enum_type!(sqlx::Postgres, sqlx::postgres::PgValueRef<'r>, UserRole);
-sqlx_enum_type!(sqlx::Sqlite, sqlx::sqlite::SqliteValueRef<'r>, UserRole);
-
 // 用户状态
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, TS)]
 #[serde(rename_all = "snake_case")]
+#[ts(export, export_to = "../frontend/src/types/generated/user.ts")]
 pub enum UserStatus {
     Active,    // 活跃
     Inactive,  // 非活跃
@@ -124,28 +120,26 @@ impl std::str::FromStr for UserStatus {
     }
 }
 
-// 分别为 PostgreSQL 和 SQLite 实现
-sqlx_enum_type!(sqlx::Postgres, sqlx::postgres::PgValueRef<'r>, UserStatus);
-sqlx_enum_type!(sqlx::Sqlite, sqlx::sqlite::SqliteValueRef<'r>, UserStatus);
-
 // 用户资料
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/user.ts")]
 pub struct UserProfile {
     pub profile_name: String,
     pub avatar_url: Option<String>,
 }
 
 // 用户实体
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/user.ts")]
 pub struct User {
     pub id: i64,
     pub username: String,
     pub email: String,
     #[serde(skip_serializing, default)] // 不序列化到JSON响应中
+    #[ts(skip)]
     pub password_hash: String,
     pub role: UserRole,
     pub status: UserStatus,
-    #[sqlx(flatten)]
     pub profile: UserProfile,
     pub last_login: Option<chrono::DateTime<chrono::Utc>>,
     pub created_at: chrono::DateTime<chrono::Utc>,

@@ -15,7 +15,6 @@ access_token_expiry = 15
 refresh_token_expiry = 7
 
 [database]
-type = "sqlite"
 url = "hwsystem.db"
 pool_size = 10
 timeout = 30

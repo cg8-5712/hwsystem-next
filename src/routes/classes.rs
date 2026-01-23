@@ -1,10 +1,10 @@
 use actix_web::{HttpRequest, HttpResponse, Result as ActixResult, web};
 use once_cell::sync::Lazy;
 
-use crate::domain::ClassService;
 use crate::middlewares;
 use crate::models::classes::requests::{ClassQueryParams, CreateClassRequest, UpdateClassRequest};
 use crate::models::users::entities::UserRole;
+use crate::services::ClassService;
 use crate::utils::SafeClassIdI64;
 
 // 懒加载的全局 CLASS_SERVICE 实例

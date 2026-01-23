@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 // 分页查询参数
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/pagination.ts")]
 pub struct PaginationQuery {
     #[serde(
         default = "default_page",
@@ -16,7 +18,8 @@ pub struct PaginationQuery {
 }
 
 // 分页响应信息
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/pagination.ts")]
 pub struct PaginationInfo {
     pub page: i64,
     pub size: i64,
@@ -25,8 +28,9 @@ pub struct PaginationInfo {
 }
 
 // 分页列表响应
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PaginatedResponse<T> {
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/pagination.ts")]
+pub struct PaginatedResponse<T: TS> {
     pub items: Vec<T>,
     pub pagination: PaginationInfo,
 }

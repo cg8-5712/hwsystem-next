@@ -1,6 +1,8 @@
 use serde::Serialize;
+use ts_rs::TS;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/system.ts")]
 pub struct SystemSettingsResponse {
     pub system_name: String,             // 系统名称
     pub max_file_size: u64,              // 单文件最大字节数

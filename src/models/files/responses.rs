@@ -1,7 +1,9 @@
 use serde::Serialize;
+use ts_rs::TS;
 
 /// FileAttachment
-#[derive(Serialize)]
+#[derive(Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/file.ts")]
 pub struct FileUploadResponse {
     /// 文件名
     pub submission_token: String,

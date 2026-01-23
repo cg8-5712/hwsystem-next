@@ -1,8 +1,10 @@
 use crate::models::users::entities::User;
 use serde::Serialize;
+use ts_rs::TS;
 
 // 用户响应模型
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/auth.ts")]
 pub struct LoginResponse {
     pub access_token: String,
     pub expires_in: i64,
@@ -10,18 +12,21 @@ pub struct LoginResponse {
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/auth.ts")]
 pub struct RefreshTokenResponse {
     pub access_token: String,
     pub expires_in: i64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/auth.ts")]
 pub struct UserInfoResponse {
     pub user: User,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/auth.ts")]
 pub struct TokenVerificationResponse {
     pub is_valid: bool,
 }

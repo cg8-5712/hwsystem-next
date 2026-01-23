@@ -1,10 +1,10 @@
 use actix_web::{HttpRequest, HttpResponse, Result as ActixResult, web};
 use once_cell::sync::Lazy;
 
-use crate::domain::AuthService;
 use crate::middlewares;
 use crate::models::auth::requests::LoginRequest;
 use crate::models::users::requests::CreateUserRequest;
+use crate::services::AuthService;
 
 // 懒加载的全局 AuthService 实例
 static AUTH_SERVICE: Lazy<AuthService> = Lazy::new(AuthService::new_lazy);

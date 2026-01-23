@@ -5,19 +5,12 @@ use dotenv::dotenv;
 use human_panic::setup_panic;
 use tracing::{debug, warn};
 
-mod cache;
-mod domain;
-mod errors;
-mod middlewares;
-mod models;
-mod repository;
-mod routes;
-mod system;
-mod utils;
-
-use crate::models::AppStartTime;
-use crate::system::{app_config::AppConfig, lifetime};
-use crate::utils::{json_error_handler, query_error_handler};
+// 从 lib.rs 导入模块
+use rust_hwsystem_next::config::AppConfig;
+use rust_hwsystem_next::models::AppStartTime;
+use rust_hwsystem_next::routes;
+use rust_hwsystem_next::runtime::lifetime;
+use rust_hwsystem_next::utils::{json_error_handler, query_error_handler};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -120,6 +113,7 @@ async fn main() -> std::io::Result<()> {
             .configure(routes::configure_homeworks_routes) // 配置作业相关路由
             .configure(routes::configure_file_routes) // 配置文件相关路由
             .configure(routes::configure_system_routes) // 配置系统相关路由
+            .configure(routes::configure_frontend_routes) // 配置前端静态资源路由（放在最后作为 fallback）
     })
     .keep_alive(std::time::Duration::from_secs(
         config.server.timeouts.keep_alive,
@@ -169,4 +163,3 @@ async fn main() -> std::io::Result<()> {
 
     Ok(())
 }
-// DONE

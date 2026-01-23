@@ -1,9 +1,9 @@
 use actix_web::{HttpRequest, HttpResponse, Result as ActixResult, web};
 use once_cell::sync::Lazy;
 
-use crate::domain::HomeworkService;
 use crate::middlewares;
 use crate::models::homeworks::requests::HomeworkListQuery;
+use crate::services::HomeworkService;
 
 // 懒加载的全局 HomeworkService 实例
 static HOMEWORK_SERVICE: Lazy<HomeworkService> = Lazy::new(HomeworkService::new_lazy);

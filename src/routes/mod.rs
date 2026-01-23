@@ -12,10 +12,13 @@ pub mod homeworks;
 
 pub mod system;
 
+pub mod frontend;
+
 pub use auth::configure_auth_routes;
 pub use class_users::configure_class_users_routes;
 pub use classes::configure_classes_routes;
 pub use files::configure_file_routes;
+pub use frontend::configure_frontend_routes;
 pub use homeworks::configure_homeworks_routes;
 pub use system::configure_system_routes;
 pub use users::configure_user_routes;

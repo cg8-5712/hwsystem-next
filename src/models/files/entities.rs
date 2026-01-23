@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
-#[derive(Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/file.ts")]
 pub struct File {
     // 文件的唯一标识符
     pub submission_token: String,

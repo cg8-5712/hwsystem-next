@@ -1,12 +1,10 @@
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
-
-use crate::sqlx_enum_type;
-use sqlx::Row;
+use ts_rs::TS;
 
 // 用户角色
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, TS)]
 #[serde(rename_all = "snake_case")]
+#[ts(export, export_to = "../frontend/src/types/generated/class-user.ts")]
 pub enum ClassUserRole {
     Student,             // 学生
     ClassRepresentative, // 课代表
@@ -69,19 +67,8 @@ impl std::str::FromStr for ClassUserRole {
     }
 }
 
-// 分别为 PostgreSQL 和 SQLite 实现
-sqlx_enum_type!(
-    sqlx::Postgres,
-    sqlx::postgres::PgValueRef<'r>,
-    ClassUserRole
-);
-sqlx_enum_type!(
-    sqlx::Sqlite,
-    sqlx::sqlite::SqliteValueRef<'r>,
-    ClassUserRole
-);
-
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/class-user.ts")]
 pub struct ClassUser {
     pub id: i64,
     pub class_id: i64,
@@ -90,21 +77,4 @@ pub struct ClassUser {
     pub role: ClassUserRole,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub joined_at: chrono::DateTime<chrono::Utc>,
-}
-
-impl ClassUser {
-    pub fn from_row_prefix(
-        prefix: &str,
-        row: &sqlx::sqlite::SqliteRow,
-    ) -> Result<Self, sqlx::Error> {
-        Ok(Self {
-            id: row.try_get(&*format!("{prefix}id"))?,
-            class_id: row.try_get(&*format!("{prefix}class_id"))?,
-            user_id: row.try_get(&*format!("{prefix}user_id"))?,
-            profile_name: row.try_get(&*format!("{prefix}profile_name"))?,
-            role: row.try_get(&*format!("{prefix}role"))?,
-            updated_at: row.try_get(&*format!("{prefix}updated_at"))?,
-            joined_at: row.try_get(&*format!("{prefix}joined_at"))?,
-        })
-    }
 }

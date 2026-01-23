@@ -1,8 +1,11 @@
 use crate::models::common::pagination::PaginationInfo;
+use crate::models::homeworks::entities::Homework;
 use serde::Serialize;
 use serde_json::Value;
+use ts_rs::TS;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/homework.ts")]
 pub struct HomeworkResponse {
     pub id: i64,
     pub title: String,
@@ -19,8 +22,9 @@ pub struct HomeworkResponse {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/homework.ts")]
 pub struct HomeworkListResponse {
-    pub items: Vec<HomeworkResponse>,
+    pub items: Vec<Homework>,
     pub pagination: PaginationInfo,
 }

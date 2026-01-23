@@ -63,10 +63,10 @@
  */
 
 use crate::cache::{CacheResult, ObjectCache};
+use crate::config::AppConfig;
 use crate::models::users::entities::UserRole;
 use crate::models::{ErrorCode, users::entities};
-use crate::repository::Storage;
-use crate::system::app_config::AppConfig;
+use crate::storage::Storage;
 use actix_service::{Service, Transform};
 use actix_web::{
     Error, HttpMessage, HttpResponse,
