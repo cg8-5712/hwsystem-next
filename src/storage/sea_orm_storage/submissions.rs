@@ -13,12 +13,14 @@ use crate::entity::users::{Column as UserColumn, Entity as Users};
 use crate::errors::{HWSystemError, Result};
 use crate::models::{
     PaginationInfo,
+    files::responses::FileInfo,
     submissions::{
         entities::{Submission, SubmissionStatus},
         requests::{CreateSubmissionRequest, SubmissionListQuery},
         responses::{
             LatestSubmissionInfo, SubmissionCreator, SubmissionGradeInfo, SubmissionListItem,
-            SubmissionListResponse, SubmissionSummaryItem, SubmissionSummaryResponse,
+            SubmissionListResponse, SubmissionResponse, SubmissionSummaryItem,
+            SubmissionSummaryResponse, UserSubmissionHistoryItem,
         },
     },
 };
@@ -124,13 +126,13 @@ impl SeaOrmStorage {
         Ok(result.map(|m| m.into_submission()))
     }
 
-    /// 获取学生某作业的提交历史
+    /// 获取学生某作业的提交历史（包含评分和附件）
     pub async fn list_user_submissions_impl(
         &self,
         homework_id: i64,
         creator_id: i64,
-    ) -> Result<Vec<Submission>> {
-        let results = Submissions::find()
+    ) -> Result<Vec<UserSubmissionHistoryItem>> {
+        let submissions = Submissions::find()
             .filter(Column::HomeworkId.eq(homework_id))
             .filter(Column::CreatorId.eq(creator_id))
             .order_by_desc(Column::Version)
@@ -138,7 +140,96 @@ impl SeaOrmStorage {
             .await
             .map_err(|e| HWSystemError::database_operation(format!("查询提交历史失败: {e}")))?;
 
-        Ok(results.into_iter().map(|m| m.into_submission()).collect())
+        if submissions.is_empty() {
+            return Ok(vec![]);
+        }
+
+        // 批量查询评分
+        let submission_ids: Vec<i64> = submissions.iter().map(|s| s.id).collect();
+        let grades = Grades::find()
+            .filter(GradeColumn::SubmissionId.is_in(submission_ids.clone()))
+            .all(&self.db)
+            .await
+            .map_err(|e| HWSystemError::database_operation(format!("查询评分失败: {e}")))?;
+        let grade_map: HashMap<i64, _> = grades.into_iter().map(|g| (g.submission_id, g)).collect();
+
+        // 批量查询附件关联
+        let sub_files = SubmissionFiles::find()
+            .filter(SubmissionFileColumn::SubmissionId.is_in(submission_ids))
+            .all(&self.db)
+            .await
+            .map_err(|e| HWSystemError::database_operation(format!("查询提交附件失败: {e}")))?;
+
+        // 按 submission_id 分组
+        let mut file_ids_map: HashMap<i64, Vec<i64>> = HashMap::new();
+        for sf in &sub_files {
+            file_ids_map
+                .entry(sf.submission_id)
+                .or_default()
+                .push(sf.file_id);
+        }
+
+        // 批量查询所有文件信息
+        let all_file_ids: Vec<i64> = sub_files.iter().map(|sf| sf.file_id).collect();
+        let mut file_map: HashMap<i64, FileInfo> = HashMap::new();
+        if !all_file_ids.is_empty() {
+            use crate::entity::files::{Column as FileColumn, Entity as Files};
+            let files = Files::find()
+                .filter(FileColumn::Id.is_in(all_file_ids))
+                .all(&self.db)
+                .await
+                .map_err(|e| HWSystemError::database_operation(format!("查询文件信息失败: {e}")))?;
+            for f in files {
+                file_map.insert(
+                    f.id,
+                    FileInfo {
+                        download_token: f.download_token,
+                        original_name: f.original_name,
+                        file_size: f.file_size,
+                        file_type: f.file_type,
+                    },
+                );
+            }
+        }
+
+        // 组装结果
+        let items = submissions
+            .into_iter()
+            .map(|s| {
+                let grade = grade_map.get(&s.id).map(|g| SubmissionGradeInfo {
+                    score: g.score,
+                    comment: g.comment.clone(),
+                    graded_at: chrono::DateTime::from_timestamp(g.graded_at, 0)
+                        .map(|dt| dt.to_rfc3339())
+                        .unwrap_or_default(),
+                });
+
+                let attachments = file_ids_map
+                    .get(&s.id)
+                    .map(|fids| {
+                        fids.iter()
+                            .filter_map(|fid| file_map.get(fid).cloned())
+                            .collect()
+                    })
+                    .unwrap_or_default();
+
+                UserSubmissionHistoryItem {
+                    id: s.id,
+                    homework_id: s.homework_id,
+                    version: s.version,
+                    content: s.content,
+                    status: s.status,
+                    is_late: s.is_late,
+                    submitted_at: chrono::DateTime::from_timestamp(s.submitted_at, 0)
+                        .map(|dt| dt.to_rfc3339())
+                        .unwrap_or_default(),
+                    attachments,
+                    grade,
+                }
+            })
+            .collect();
+
+        Ok(items)
     }
 
     /// 列出提交（分页）
@@ -457,8 +548,81 @@ impl SeaOrmStorage {
         &self,
         homework_id: i64,
         user_id: i64,
-    ) -> Result<Vec<Submission>> {
+    ) -> Result<Vec<UserSubmissionHistoryItem>> {
         // 复用现有的 list_user_submissions_impl，它已经实现了按版本倒序
         self.list_user_submissions_impl(homework_id, user_id).await
+    }
+
+    /// 获取提交详情（完整响应，包含 creator、attachments、grade）
+    pub async fn get_submission_response_impl(
+        &self,
+        submission_id: i64,
+    ) -> Result<Option<SubmissionResponse>> {
+        // 1. 查询提交基本信息
+        let submission = match Submissions::find_by_id(submission_id)
+            .one(&self.db)
+            .await
+            .map_err(|e| HWSystemError::database_operation(format!("查询提交失败: {e}")))?
+        {
+            Some(s) => s,
+            None => return Ok(None),
+        };
+
+        // 2. 查询用户信息
+        let user = Users::find_by_id(submission.creator_id)
+            .one(&self.db)
+            .await
+            .map_err(|e| HWSystemError::database_operation(format!("查询用户失败: {e}")))?;
+
+        let creator = SubmissionCreator {
+            id: submission.creator_id,
+            username: user
+                .as_ref()
+                .map(|u| u.username.clone())
+                .unwrap_or_else(|| "未知用户".to_string()),
+            display_name: user.and_then(|u| u.display_name),
+        };
+
+        // 3. 查询附件
+        let file_ids = self.get_submission_file_ids_impl(submission_id).await?;
+        let mut attachments = Vec::new();
+        for file_id in file_ids {
+            if let Some(file) = self.get_file_by_id_impl(file_id).await? {
+                attachments.push(FileInfo {
+                    download_token: file.download_token,
+                    original_name: file.original_name,
+                    file_size: file.file_size,
+                    file_type: file.file_type,
+                });
+            }
+        }
+
+        // 4. 查询评分
+        let grade = Grades::find()
+            .filter(GradeColumn::SubmissionId.eq(submission_id))
+            .one(&self.db)
+            .await
+            .map_err(|e| HWSystemError::database_operation(format!("查询评分失败: {e}")))?
+            .map(|g| SubmissionGradeInfo {
+                score: g.score,
+                comment: g.comment,
+                graded_at: chrono::DateTime::from_timestamp(g.graded_at, 0)
+                    .map(|dt| dt.to_rfc3339())
+                    .unwrap_or_default(),
+            });
+
+        // 5. 组装响应
+        Ok(Some(SubmissionResponse {
+            id: submission.id,
+            homework_id: submission.homework_id,
+            creator,
+            content: submission.content.unwrap_or_default(),
+            attachments,
+            status: submission.status,
+            submitted_at: chrono::DateTime::from_timestamp(submission.submitted_at, 0)
+                .map(|dt| dt.to_rfc3339())
+                .unwrap_or_default(),
+            grade,
+        }))
     }
 }

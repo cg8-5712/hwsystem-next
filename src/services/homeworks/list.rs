@@ -105,7 +105,17 @@ pub async fn list_homeworks(
         }
     }
 
-    match storage.list_homeworks_with_pagination(filtered_query).await {
+    // 确定是否需要查询当前用户的提交状态
+    // 只有普通用户（学生）需要查询 my_submission
+    let current_user_id = match current_user.role {
+        UserRole::User => Some(current_user.id),
+        _ => None,
+    };
+
+    match storage
+        .list_homeworks_with_pagination(filtered_query, current_user_id)
+        .await
+    {
         Ok(resp) => Ok(HttpResponse::Ok().json(ApiResponse::success(resp, "获取作业列表成功"))),
         Err(e) => Ok(
             HttpResponse::InternalServerError().json(ApiResponse::error_empty(

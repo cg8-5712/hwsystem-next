@@ -147,7 +147,10 @@ use crate::models::{
     submissions::{
         entities::Submission,
         requests::{CreateSubmissionRequest, SubmissionListQuery},
-        responses::{SubmissionListResponse, SubmissionSummaryResponse},
+        responses::{
+            SubmissionListResponse, SubmissionResponse, SubmissionSummaryResponse,
+            UserSubmissionHistoryItem,
+        },
     },
     users::{
         entities::User,
@@ -362,8 +365,10 @@ impl Storage for SeaOrmStorage {
     async fn list_homeworks_with_pagination(
         &self,
         query: HomeworkListQuery,
+        current_user_id: Option<i64>,
     ) -> Result<HomeworkListResponse> {
-        self.list_homeworks_with_pagination_impl(query).await
+        self.list_homeworks_with_pagination_impl(query, current_user_id)
+            .await
     }
 
     async fn update_homework(
@@ -410,6 +415,13 @@ impl Storage for SeaOrmStorage {
         self.get_submission_by_id_impl(submission_id).await
     }
 
+    async fn get_submission_response(
+        &self,
+        submission_id: i64,
+    ) -> Result<Option<SubmissionResponse>> {
+        self.get_submission_response_impl(submission_id).await
+    }
+
     async fn get_latest_submission(
         &self,
         homework_id: i64,
@@ -423,7 +435,7 @@ impl Storage for SeaOrmStorage {
         &self,
         homework_id: i64,
         creator_id: i64,
-    ) -> Result<Vec<Submission>> {
+    ) -> Result<Vec<UserSubmissionHistoryItem>> {
         self.list_user_submissions_impl(homework_id, creator_id)
             .await
     }
@@ -472,7 +484,7 @@ impl Storage for SeaOrmStorage {
         &self,
         homework_id: i64,
         user_id: i64,
-    ) -> Result<Vec<Submission>> {
+    ) -> Result<Vec<UserSubmissionHistoryItem>> {
         self.list_user_submissions_for_teacher_impl(homework_id, user_id)
             .await
     }

@@ -22,6 +22,7 @@ pub struct ClassUserListParams {
     #[ts(flatten)]
     pub pagination: PaginationQuery,
     pub search: Option<String>,
+    pub role: Option<ClassUserRole>,
 }
 
 // 班级列表查询参数（用于存储层）
@@ -31,4 +32,5 @@ pub struct ClassUserQuery {
     pub page: Option<i64>,
     pub size: Option<i64>,
     pub search: Option<String>,
+    pub role: Option<ClassUserRole>,
 }

@@ -14,8 +14,8 @@ pub async fn get_submission(
     let user_role = RequireJWT::extract_user_role(request);
     let user_id = RequireJWT::extract_user_id(request);
 
-    // 获取提交信息
-    let submission = match storage.get_submission_by_id(submission_id).await {
+    // 获取提交详情（完整响应，包含 creator、attachments、grade）
+    let submission = match storage.get_submission_response(submission_id).await {
         Ok(Some(sub)) => sub,
         Ok(None) => {
             return Ok(HttpResponse::NotFound()
@@ -57,7 +57,7 @@ pub async fn get_submission(
         Some(UserRole::User) | None => {
             // 学生只能查看自己的提交
             if let Some(uid) = user_id {
-                if submission.creator_id != uid {
+                if submission.creator.id != uid {
                     return Ok(HttpResponse::Forbidden().json(ApiResponse::error_empty(
                         ErrorCode::Forbidden,
                         "只能查看自己的提交",
@@ -83,12 +83,15 @@ pub async fn get_latest_submission(
 ) -> ActixResult<HttpResponse> {
     let storage = service.get_storage(request);
 
-    match storage.get_latest_submission(homework_id, creator_id).await {
-        Ok(Some(submission)) => {
-            Ok(HttpResponse::Ok().json(ApiResponse::success(submission, "查询成功")))
+    // 使用 list_user_submissions（已含 grade 和 attachments）取最新一条
+    match storage.list_user_submissions(homework_id, creator_id).await {
+        Ok(items) => {
+            if let Some(latest) = items.into_iter().next() {
+                Ok(HttpResponse::Ok().json(ApiResponse::success(latest, "查询成功")))
+            } else {
+                Ok(HttpResponse::Ok().json(ApiResponse::success_empty("暂无提交")))
+            }
         }
-        // 尚未提交时返回 200 + null，而不是 404
-        Ok(None) => Ok(HttpResponse::Ok().json(ApiResponse::success_empty("暂无提交"))),
         Err(e) => Ok(
             HttpResponse::InternalServerError().json(ApiResponse::error_empty(
                 ErrorCode::InternalServerError,

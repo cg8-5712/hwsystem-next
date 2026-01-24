@@ -3,6 +3,7 @@
 use super::SeaOrmStorage;
 use crate::entity::class_users::{ActiveModel, Column, Entity as ClassUsers};
 use crate::entity::classes::{Column as ClassColumn, Entity as Classes};
+use crate::entity::users::{self, Entity as Users};
 use crate::errors::{HWSystemError, Result};
 use crate::models::{
     PaginationInfo,
@@ -113,11 +114,36 @@ impl SeaOrmStorage {
         query: ClassUserQuery,
     ) -> Result<ClassUserListResponse> {
         let page = query.page.unwrap_or(1).max(1) as u64;
-        let size = query.size.unwrap_or(10).clamp(1, 100) as u64;
+        let size = query.size.unwrap_or(10).clamp(1, 200) as u64;
 
-        let select = ClassUsers::find()
+        let mut select = ClassUsers::find()
             .filter(Column::ClassId.eq(class_id))
             .order_by_desc(Column::JoinedAt);
+
+        // role 过滤
+        if let Some(ref role) = query.role {
+            select = select.filter(Column::Role.eq(role.to_string()));
+        }
+
+        // search 过滤 - 查 users 表的 username/display_name
+        if let Some(ref search) = query.search
+            && !search.trim().is_empty() {
+                let escaped = escape_like_pattern(search.trim());
+                let matching_user_ids: Vec<i64> = Users::find()
+                    .filter(
+                        Condition::any()
+                            .add(users::Column::Username.contains(&escaped))
+                            .add(users::Column::DisplayName.contains(&escaped)),
+                    )
+                    .all(&self.db)
+                    .await
+                    .map_err(|e| HWSystemError::database_operation(format!("搜索用户失败: {e}")))?
+                    .into_iter()
+                    .map(|u| u.id)
+                    .collect();
+
+                select = select.filter(Column::UserId.is_in(matching_user_ids));
+            }
 
         // 分页查询
         let paginator = select.paginate(&self.db, size);

@@ -4,8 +4,6 @@ use ts_rs::TS;
 use crate::models::PaginationInfo;
 use crate::models::files::responses::FileInfo;
 
-use super::entities::Submission;
-
 /// 提交者信息
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "../frontend/src/types/generated/submission.ts")]
@@ -61,11 +59,26 @@ pub struct SubmissionListResponse {
     pub pagination: PaginationInfo,
 }
 
+/// 用户提交历史项（包含评分信息）
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/submission.ts")]
+pub struct UserSubmissionHistoryItem {
+    pub id: i64,
+    pub homework_id: i64,
+    pub version: i32,
+    pub content: Option<String>,
+    pub status: String,
+    pub is_late: bool,
+    pub submitted_at: String,
+    pub attachments: Vec<FileInfo>,
+    pub grade: Option<SubmissionGradeInfo>,
+}
+
 /// 用户提交历史响应（无分页）
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "../frontend/src/types/generated/submission.ts")]
 pub struct UserSubmissionHistoryResponse {
-    pub items: Vec<Submission>,
+    pub items: Vec<UserSubmissionHistoryItem>,
 }
 
 // ============ 提交概览相关（按学生聚合）============

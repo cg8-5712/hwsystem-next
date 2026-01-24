@@ -3,6 +3,7 @@ use actix_web::{HttpRequest, HttpResponse, Result as ActixResult};
 use super::HomeworkService;
 use crate::middlewares::RequireJWT;
 use crate::models::files::responses::FileInfo;
+use crate::models::homeworks::responses::HomeworkCreator;
 use crate::models::users::entities::UserRole;
 use crate::models::{ApiResponse, ErrorCode, homeworks::responses::HomeworkDetail};
 
@@ -67,9 +68,20 @@ pub async fn get_homework(
                 }
             }
 
+            // 获取创建者信息
+            let creator = match storage.get_user_by_id(homework.created_by).await {
+                Ok(Some(user)) => Some(HomeworkCreator {
+                    id: user.id,
+                    username: user.username,
+                    display_name: user.display_name,
+                }),
+                _ => None,
+            };
+
             let detail = HomeworkDetail {
                 homework,
                 attachments,
+                creator,
             };
             Ok(HttpResponse::Ok().json(ApiResponse::success(detail, "查询成功")))
         }

@@ -1,17 +1,21 @@
 //! 作业存储操作
 
+use std::collections::HashMap;
+
 use super::SeaOrmStorage;
+use crate::entity::grades::{Column as GradeColumn, Entity as Grades};
 use crate::entity::homework_files::{
     ActiveModel as HomeworkFileActiveModel, Column as HomeworkFileColumn, Entity as HomeworkFiles,
 };
 use crate::entity::homeworks::{ActiveModel, Column, Entity as Homeworks};
+use crate::entity::submissions::{Column as SubmissionColumn, Entity as Submissions};
 use crate::errors::{HWSystemError, Result};
 use crate::models::{
     PaginationInfo,
     homeworks::{
         entities::Homework,
         requests::{CreateHomeworkRequest, HomeworkListQuery, UpdateHomeworkRequest},
-        responses::HomeworkListResponse,
+        responses::{HomeworkCreator, HomeworkListItem, HomeworkListResponse, MySubmissionSummary},
     },
 };
 use crate::utils::escape_like_pattern;
@@ -69,6 +73,7 @@ impl SeaOrmStorage {
     pub async fn list_homeworks_with_pagination_impl(
         &self,
         query: HomeworkListQuery,
+        current_user_id: Option<i64>,
     ) -> Result<HomeworkListResponse> {
         let page = query.page.unwrap_or(1).max(1) as u64;
         let size = query.size.unwrap_or(10).clamp(1, 100) as u64;
@@ -108,13 +113,111 @@ impl SeaOrmStorage {
             .await
             .map_err(|e| HWSystemError::database_operation(format!("查询作业页数失败: {e}")))?;
 
-        let homeworks = paginator
+        let homeworks: Vec<Homework> = paginator
             .fetch_page(page - 1)
             .await
-            .map_err(|e| HWSystemError::database_operation(format!("查询作业列表失败: {e}")))?;
+            .map_err(|e| HWSystemError::database_operation(format!("查询作业列表失败: {e}")))?
+            .into_iter()
+            .map(|m| m.into_homework())
+            .collect();
+
+        // 收集所有 created_by ID 并去重
+        let creator_ids: Vec<i64> = homeworks
+            .iter()
+            .map(|h| h.created_by)
+            .collect::<std::collections::HashSet<_>>()
+            .into_iter()
+            .collect();
+
+        // 查询创建者信息
+        let mut creator_map: HashMap<i64, HomeworkCreator> = HashMap::new();
+        for creator_id in creator_ids {
+            if let Ok(Some(user)) = self.get_user_by_id_impl(creator_id).await {
+                creator_map.insert(
+                    creator_id,
+                    HomeworkCreator {
+                        id: user.id,
+                        username: user.username,
+                        display_name: user.display_name,
+                    },
+                );
+            }
+        }
+
+        // 查询当前用户的提交状态（如果提供了 current_user_id）
+        let mut my_submission_map: HashMap<i64, MySubmissionSummary> = HashMap::new();
+        if let Some(user_id) = current_user_id {
+            let homework_ids: Vec<i64> = homeworks.iter().map(|h| h.id).collect();
+            if !homework_ids.is_empty() {
+                // 查询该用户对这些作业的所有提交
+                let submissions = Submissions::find()
+                    .filter(SubmissionColumn::HomeworkId.is_in(homework_ids))
+                    .filter(SubmissionColumn::CreatorId.eq(user_id))
+                    .order_by_desc(SubmissionColumn::Version)
+                    .all(&self.db)
+                    .await
+                    .map_err(|e| {
+                        HWSystemError::database_operation(format!("查询用户提交失败: {e}"))
+                    })?;
+
+                // 按 homework_id 聚合，取最新版本
+                for sub in submissions {
+                    my_submission_map.entry(sub.homework_id).or_insert_with(|| {
+                        MySubmissionSummary {
+                            id: sub.id,
+                            version: sub.version,
+                            status: sub.status.clone(),
+                            is_late: sub.is_late,
+                            score: None, // 稍后填充
+                        }
+                    });
+                }
+
+                // 批量查询评分信息
+                if !my_submission_map.is_empty() {
+                    let submission_ids: Vec<i64> =
+                        my_submission_map.values().map(|s| s.id).collect();
+                    let grades = Grades::find()
+                        .filter(GradeColumn::SubmissionId.is_in(submission_ids))
+                        .all(&self.db)
+                        .await
+                        .map_err(|e| {
+                            HWSystemError::database_operation(format!("查询评分失败: {e}"))
+                        })?;
+
+                    // 建立 submission_id -> score 的映射
+                    let grade_map: HashMap<i64, f64> = grades
+                        .into_iter()
+                        .map(|g| (g.submission_id, g.score))
+                        .collect();
+
+                    // 填充 score 并更新状态为 graded
+                    for summary in my_submission_map.values_mut() {
+                        if let Some(score) = grade_map.get(&summary.id) {
+                            summary.score = Some(*score);
+                            summary.status = "graded".to_string();
+                        }
+                    }
+                }
+            }
+        }
+
+        // 构造带 creator 和 my_submission 的作业列表
+        let items: Vec<HomeworkListItem> = homeworks
+            .into_iter()
+            .map(|homework| {
+                let creator = creator_map.get(&homework.created_by).cloned();
+                let my_submission = my_submission_map.get(&homework.id).cloned();
+                HomeworkListItem {
+                    homework,
+                    creator,
+                    my_submission,
+                }
+            })
+            .collect();
 
         Ok(HomeworkListResponse {
-            items: homeworks.into_iter().map(|m| m.into_homework()).collect(),
+            items,
             pagination: PaginationInfo {
                 page: page as i64,
                 page_size: size as i64,

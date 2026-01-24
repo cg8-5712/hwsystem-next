@@ -26,6 +26,7 @@ pub async fn list_class_users_with_pagination(
         page: Some(query.pagination.page),
         size: Some(query.pagination.size),
         search: query.search,
+        role: query.role,
     };
 
     match storage

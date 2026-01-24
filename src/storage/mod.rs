@@ -30,7 +30,10 @@ use crate::models::{
     submissions::{
         entities::Submission,
         requests::{CreateSubmissionRequest, SubmissionListQuery},
-        responses::{SubmissionListResponse, SubmissionSummaryResponse},
+        responses::{
+            SubmissionListResponse, SubmissionResponse, SubmissionSummaryResponse,
+            UserSubmissionHistoryItem,
+        },
     },
     users::{
         entities::User,
@@ -179,9 +182,11 @@ pub trait Storage: Send + Sync {
     /// 通过 ID 获取作业
     async fn get_homework_by_id(&self, homework_id: i64) -> Result<Option<Homework>>;
     /// 列出作业
+    /// - current_user_id: 当前用户 ID，如果提供则查询该用户对这些作业的提交状态
     async fn list_homeworks_with_pagination(
         &self,
         query: HomeworkListQuery,
+        current_user_id: Option<i64>,
     ) -> Result<HomeworkListResponse>;
     /// 更新作业
     async fn update_homework(
@@ -214,18 +219,23 @@ pub trait Storage: Send + Sync {
     ) -> Result<Submission>;
     /// 通过 ID 获取提交
     async fn get_submission_by_id(&self, submission_id: i64) -> Result<Option<Submission>>;
+    /// 通过 ID 获取提交详情（完整响应，包含 creator、attachments、grade）
+    async fn get_submission_response(
+        &self,
+        submission_id: i64,
+    ) -> Result<Option<SubmissionResponse>>;
     /// 获取学生某作业的最新提交
     async fn get_latest_submission(
         &self,
         homework_id: i64,
         creator_id: i64,
     ) -> Result<Option<Submission>>;
-    /// 获取学生某作业的提交历史
+    /// 获取学生某作业的提交历史（包含评分和附件）
     async fn list_user_submissions(
         &self,
         homework_id: i64,
         creator_id: i64,
-    ) -> Result<Vec<Submission>>;
+    ) -> Result<Vec<UserSubmissionHistoryItem>>;
     /// 列出作业的所有提交（分页）
     async fn list_submissions_with_pagination(
         &self,
@@ -251,12 +261,12 @@ pub trait Storage: Send + Sync {
         page: i64,
         size: i64,
     ) -> Result<SubmissionSummaryResponse>;
-    /// 获取某学生某作业的所有提交版本（教师视角）
+    /// 获取某学生某作业的所有提交版本（教师视角，包含评分和附件）
     async fn list_user_submissions_for_teacher(
         &self,
         homework_id: i64,
         user_id: i64,
-    ) -> Result<Vec<Submission>>;
+    ) -> Result<Vec<UserSubmissionHistoryItem>>;
 
     // ============================================
     // 评分管理方法

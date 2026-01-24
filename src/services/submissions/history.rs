@@ -13,8 +13,8 @@ pub async fn list_user_submissions(
     let storage = service.get_storage(request);
 
     match storage.list_user_submissions(homework_id, creator_id).await {
-        Ok(submissions) => {
-            let response = UserSubmissionHistoryResponse { items: submissions };
+        Ok(items) => {
+            let response = UserSubmissionHistoryResponse { items };
             Ok(HttpResponse::Ok().json(ApiResponse::success(response, "查询成功")))
         }
         Err(e) => Ok(

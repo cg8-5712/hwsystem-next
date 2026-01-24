@@ -92,6 +92,7 @@ pub async fn get_homework_stats(
         page: Some(1),
         size: Some(10000), // 获取足够多的成员
         search: None,
+        role: None,
     };
 
     let class_users_response = match storage

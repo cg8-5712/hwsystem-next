@@ -184,9 +184,10 @@ async fn check_teacher_class_access(
 
     // 再检查是否是班级创建者（teacher_id）
     if let Ok(Some(class)) = storage.get_class_by_id(class_id).await
-        && class.teacher_id == teacher_id {
-            return true;
-        }
+        && class.teacher_id == teacher_id
+    {
+        return true;
+    }
 
     false
 }
