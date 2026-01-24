@@ -2,7 +2,7 @@ use actix_web::{HttpRequest, HttpResponse, Result as ActixResult, web};
 use once_cell::sync::Lazy;
 
 use crate::middlewares::{self, RateLimit};
-use crate::models::auth::requests::LoginRequest;
+use crate::models::auth::requests::{LoginRequest, UpdateProfileRequest};
 use crate::models::users::requests::CreateUserRequest;
 use crate::services::AuthService;
 
@@ -34,6 +34,16 @@ pub async fn verify_token(request: HttpRequest) -> ActixResult<HttpResponse> {
 pub async fn get_user(request: HttpRequest) -> ActixResult<HttpResponse> {
     AUTH_SERVICE.get_user(&request).await
 }
+
+pub async fn update_profile(
+    req: HttpRequest,
+    update_data: web::Json<UpdateProfileRequest>,
+) -> ActixResult<HttpResponse> {
+    AUTH_SERVICE
+        .update_profile(update_data.into_inner(), &req)
+        .await
+}
+
 // 配置路由
 pub fn configure_auth_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -60,7 +70,8 @@ pub fn configure_auth_routes(cfg: &mut web::ServiceConfig) {
                 web::scope("")
                     .wrap(middlewares::RequireJWT)
                     .route("/verify-token", web::get().to(verify_token))
-                    .route("/me", web::get().to(get_user)),
+                    .route("/me", web::get().to(get_user))
+                    .route("/me", web::put().to(update_profile)),
             ),
     );
 }

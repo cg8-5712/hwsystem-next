@@ -58,9 +58,9 @@ impl ClassUserService {
         &self,
         req: &HttpRequest,
         class_id: i64,
-        class_user_id: i64,
+        user_id: i64,
     ) -> ActixResult<HttpResponse> {
-        get::get_class_user(self, req, class_id, class_user_id).await
+        get::get_class_user(self, req, class_id, user_id).await
     }
 
     // 更新用户信息
@@ -68,10 +68,10 @@ impl ClassUserService {
         &self,
         req: &HttpRequest,
         class_id: i64,
-        class_user_id: i64,
+        user_id: i64,
         update_data: UpdateClassUserRequest,
     ) -> ActixResult<HttpResponse> {
-        update::update_class_user(self, req, class_id, class_user_id, update_data).await
+        update::update_class_user(self, req, class_id, user_id, update_data).await
     }
 
     // 删除用户
@@ -79,8 +79,8 @@ impl ClassUserService {
         &self,
         req: &HttpRequest,
         class_id: i64,
-        class_user_id: i64,
+        user_id: i64,
     ) -> ActixResult<HttpResponse> {
-        delete::delete_class_user(self, req, class_id, class_user_id).await
+        delete::delete_class_user(self, req, class_id, user_id).await
     }
 }

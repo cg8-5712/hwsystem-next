@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use super::SeaOrmStorage;
 use crate::entity::grades::{Column as GradeColumn, Entity as Grades};
+use crate::entity::homeworks::Entity as Homeworks;
 use crate::entity::submission_files::{
     ActiveModel as SubmissionFileActiveModel, Column as SubmissionFileColumn,
     Entity as SubmissionFiles,
@@ -18,8 +19,8 @@ use crate::models::{
         entities::{Submission, SubmissionStatus},
         requests::{CreateSubmissionRequest, SubmissionListQuery},
         responses::{
-            LatestSubmissionInfo, SubmissionCreator, SubmissionGradeInfo, SubmissionListItem,
-            SubmissionListResponse, SubmissionResponse, SubmissionSummaryItem,
+            LatestSubmissionInfo, SubmissionCreator, SubmissionGradeInfo, SubmissionHomeworkInfo,
+            SubmissionListItem, SubmissionListResponse, SubmissionResponse, SubmissionSummaryItem,
             SubmissionSummaryResponse, UserSubmissionHistoryItem,
         },
     },
@@ -308,6 +309,7 @@ impl SeaOrmStorage {
                             .map(|u| u.username.clone())
                             .unwrap_or_else(|| "未知用户".to_string()),
                         display_name: creator.and_then(|u| u.display_name.clone()),
+                        avatar_url: creator.and_then(|u| u.avatar_url.clone()),
                     },
                     version: s.version,
                     content: s.content,
@@ -510,6 +512,7 @@ impl SeaOrmStorage {
                             .map(|u| u.username.clone())
                             .unwrap_or_else(|| "未知用户".to_string()),
                         display_name: user.and_then(|u| u.display_name.clone()),
+                        avatar_url: user.and_then(|u| u.avatar_url.clone()),
                     },
                     latest_submission: LatestSubmissionInfo {
                         id: sub.id,
@@ -580,7 +583,8 @@ impl SeaOrmStorage {
                 .as_ref()
                 .map(|u| u.username.clone())
                 .unwrap_or_else(|| "未知用户".to_string()),
-            display_name: user.and_then(|u| u.display_name),
+            display_name: user.as_ref().and_then(|u| u.display_name.clone()),
+            avatar_url: user.and_then(|u| u.avatar_url),
         };
 
         // 3. 查询附件
@@ -611,7 +615,21 @@ impl SeaOrmStorage {
                     .unwrap_or_default(),
             });
 
-        // 5. 组装响应
+        // 5. 查询作业信息
+        let homework = Homeworks::find_by_id(submission.homework_id)
+            .one(&self.db)
+            .await
+            .map_err(|e| HWSystemError::database_operation(format!("查询作业失败: {e}")))?
+            .map(|hw| SubmissionHomeworkInfo {
+                id: hw.id,
+                title: hw.title,
+                max_score: hw.max_score,
+                deadline: hw.deadline.and_then(|ts| {
+                    chrono::DateTime::from_timestamp(ts, 0).map(|dt| dt.to_rfc3339())
+                }),
+            });
+
+        // 6. 组装响应
         Ok(Some(SubmissionResponse {
             id: submission.id,
             homework_id: submission.homework_id,
@@ -623,6 +641,9 @@ impl SeaOrmStorage {
                 .map(|dt| dt.to_rfc3339())
                 .unwrap_or_default(),
             grade,
+            version: submission.version,
+            is_late: submission.is_late,
+            homework,
         }))
     }
 }

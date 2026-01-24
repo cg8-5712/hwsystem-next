@@ -1,4 +1,5 @@
 pub mod login;
+pub mod profile;
 pub mod register;
 pub mod token;
 
@@ -66,5 +67,14 @@ impl AuthService {
         // 这里可以实现获取用户信息的逻辑
         // 例如从数据库或缓存中获取用户信息
         token::handle_get_user(self, request).await
+    }
+
+    // 更新用户资料
+    pub async fn update_profile(
+        &self,
+        update_request: crate::models::auth::requests::UpdateProfileRequest,
+        request: &HttpRequest,
+    ) -> ActixResult<HttpResponse> {
+        profile::handle_update_profile(self, update_request, request).await
     }
 }

@@ -15,7 +15,7 @@ pub async fn update_class_user(
     service: &ClassUserService,
     request: &HttpRequest,
     class_id: i64,
-    class_user_id: i64,
+    user_id: i64,
     update_data: UpdateClassUserRequest,
 ) -> ActixResult<HttpResponse> {
     let storage = service.get_storage(request);
@@ -55,7 +55,7 @@ pub async fn update_class_user(
     }
 
     match storage
-        .update_class_user(class_id, class_user_id, update_data)
+        .update_class_user(class_id, user_id, update_data)
         .await
     {
         Ok(Some(class_user)) => Ok(HttpResponse::Ok().json(ApiResponse::success(

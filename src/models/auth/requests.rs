@@ -13,3 +13,13 @@ pub struct LoginRequest {
     #[serde(default)]
     pub remember_me: bool,
 }
+
+// 用户自更新请求（普通用户修改自己的资料）
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/auth.ts")]
+pub struct UpdateProfileRequest {
+    pub display_name: Option<String>,
+    pub email: Option<String>,
+    pub password: Option<String>,
+    pub avatar_url: Option<String>,
+}

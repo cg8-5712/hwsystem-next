@@ -72,26 +72,28 @@ impl SeaOrmStorage {
         Ok(result.rows_affected > 0)
     }
 
-    /// 更新班级用户信息
+    /// 更新班级用户信息（通过 user_id 和 class_id）
     pub async fn update_class_user_impl(
         &self,
         class_id: i64,
-        class_user_id: i64,
+        user_id: i64,
         update: UpdateClassUserRequest,
     ) -> Result<Option<ClassUser>> {
         // 先检查班级用户是否存在
-        let existing = ClassUsers::find_by_id(class_user_id)
+        let existing = ClassUsers::find()
+            .filter(Column::UserId.eq(user_id))
             .filter(Column::ClassId.eq(class_id))
             .one(&self.db)
             .await
             .map_err(|e| HWSystemError::database_operation(format!("查询班级用户失败: {e}")))?;
 
-        if existing.is_none() {
-            return Ok(None);
-        }
+        let class_user = match existing {
+            Some(cu) => cu,
+            None => return Ok(None),
+        };
 
         let mut model = ActiveModel {
-            id: Set(class_user_id),
+            id: Set(class_user.id),
             ..Default::default()
         };
 
@@ -127,23 +129,24 @@ impl SeaOrmStorage {
 
         // search 过滤 - 查 users 表的 username/display_name
         if let Some(ref search) = query.search
-            && !search.trim().is_empty() {
-                let escaped = escape_like_pattern(search.trim());
-                let matching_user_ids: Vec<i64> = Users::find()
-                    .filter(
-                        Condition::any()
-                            .add(users::Column::Username.contains(&escaped))
-                            .add(users::Column::DisplayName.contains(&escaped)),
-                    )
-                    .all(&self.db)
-                    .await
-                    .map_err(|e| HWSystemError::database_operation(format!("搜索用户失败: {e}")))?
-                    .into_iter()
-                    .map(|u| u.id)
-                    .collect();
+            && !search.trim().is_empty()
+        {
+            let escaped = escape_like_pattern(search.trim());
+            let matching_user_ids: Vec<i64> = Users::find()
+                .filter(
+                    Condition::any()
+                        .add(users::Column::Username.contains(&escaped))
+                        .add(users::Column::DisplayName.contains(&escaped)),
+                )
+                .all(&self.db)
+                .await
+                .map_err(|e| HWSystemError::database_operation(format!("搜索用户失败: {e}")))?
+                .into_iter()
+                .map(|u| u.id)
+                .collect();
 
-                select = select.filter(Column::UserId.is_in(matching_user_ids));
-            }
+            select = select.filter(Column::UserId.is_in(matching_user_ids));
+        }
 
         // 分页查询
         let paginator = select.paginate(&self.db, size);

@@ -16,7 +16,10 @@ use crate::models::{
     homeworks::{
         entities::Homework,
         requests::{CreateHomeworkRequest, HomeworkListQuery, UpdateHomeworkRequest},
-        responses::{HomeworkCreator, HomeworkListItem, HomeworkListResponse, HomeworkStatsSummary, MySubmissionSummary},
+        responses::{
+            HomeworkCreator, HomeworkListItem, HomeworkListResponse, HomeworkStatsSummary,
+            MySubmissionSummary,
+        },
     },
 };
 use crate::utils::escape_like_pattern;
@@ -140,6 +143,7 @@ impl SeaOrmStorage {
                         id: user.id,
                         username: user.username,
                         display_name: user.display_name,
+                        avatar_url: user.avatar_url,
                     },
                 );
             }
@@ -234,9 +238,7 @@ impl SeaOrmStorage {
                 .filter(SubmissionColumn::HomeworkId.is_in(homework_ids.clone()))
                 .all(&self.db)
                 .await
-                .map_err(|e| {
-                    HWSystemError::database_operation(format!("查询作业提交失败: {e}"))
-                })?;
+                .map_err(|e| HWSystemError::database_operation(format!("查询作业提交失败: {e}")))?;
 
             // 按 homework_id 聚合，统计唯一提交者
             let mut hw_submitters: HashMap<i64, std::collections::HashSet<i64>> = HashMap::new();
@@ -261,23 +263,17 @@ impl SeaOrmStorage {
                     .filter(GradeColumn::SubmissionId.is_in(submission_ids))
                     .all(&self.db)
                     .await
-                    .map_err(|e| {
-                        HWSystemError::database_operation(format!("查询评分失败: {e}"))
-                    })?;
+                    .map_err(|e| HWSystemError::database_operation(format!("查询评分失败: {e}")))?;
 
                 // 建立 submission_id -> homework_id 的映射
-                let sub_to_hw: HashMap<i64, i64> = submissions
-                    .iter()
-                    .map(|s| (s.id, s.homework_id))
-                    .collect();
+                let sub_to_hw: HashMap<i64, i64> =
+                    submissions.iter().map(|s| (s.id, s.homework_id)).collect();
 
                 // 按 homework 聚合已评分的唯一用户
                 let mut hw_graded_users: HashMap<i64, std::collections::HashSet<i64>> =
                     HashMap::new();
-                let sub_to_creator: HashMap<i64, i64> = submissions
-                    .iter()
-                    .map(|s| (s.id, s.creator_id))
-                    .collect();
+                let sub_to_creator: HashMap<i64, i64> =
+                    submissions.iter().map(|s| (s.id, s.creator_id)).collect();
 
                 for grade in grades {
                     if let (Some(&hw_id), Some(&creator_id)) = (

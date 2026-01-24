@@ -13,7 +13,7 @@ pub async fn get_class_user(
     service: &ClassUserService,
     req: &HttpRequest,
     class_id: i64,
-    class_user_id: i64,
+    user_id: i64,
 ) -> ActixResult<HttpResponse> {
     let user_claims = match RequireJWT::extract_user_claims(req) {
         Some(claims) => claims,
@@ -28,12 +28,15 @@ pub async fn get_class_user(
     let current_class_user = RequireClassRole::extract_user_class_user(req);
     let storage = service.get_storage(req);
 
-    // 通过 class_user_id 获取目标班级用户信息
-    let target_class_user = match storage.get_class_user_by_id(class_user_id).await {
+    // 通过 user_id 和 class_id 获取目标班级用户信息
+    let target_class_user = match storage
+        .get_class_user_by_user_id_and_class_id(user_id, class_id)
+        .await
+    {
         Ok(Some(cu)) => cu,
         Ok(None) => {
             return Ok(HttpResponse::NotFound().json(ApiResponse::error_empty(
-                ErrorCode::NotFound,
+                ErrorCode::ClassUserNotFound,
                 "Class user not found",
             )));
         }
@@ -46,14 +49,6 @@ pub async fn get_class_user(
             );
         }
     };
-
-    // 验证目标用户是否属于该班级
-    if target_class_user.class_id != class_id {
-        return Ok(HttpResponse::NotFound().json(ApiResponse::error_empty(
-            ErrorCode::NotFound,
-            "Class user not found in this class",
-        )));
-    }
 
     // 权限校验
     if let Err(resp) = check_class_user_get_permission(

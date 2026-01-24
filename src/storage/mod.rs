@@ -134,11 +134,11 @@ pub trait Storage: Send + Sync {
     ) -> Result<ClassUser>;
     /// 学生离开/踢出班级
     async fn leave_class(&self, user_id: i64, class_id: i64) -> Result<bool>;
-    /// 更新班级用户信息
+    /// 更新班级用户信息（通过 user_id 和 class_id）
     async fn update_class_user(
         &self,
         class_id: i64,
-        class_user_id: i64,
+        user_id: i64,
         update_data: UpdateClassUserRequest,
     ) -> Result<Option<ClassUser>>;
     /// 列出班级用户

@@ -10,6 +10,7 @@ pub struct HomeworkCreator {
     pub id: i64,
     pub username: String,
     pub display_name: Option<String>,
+    pub avatar_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, TS)]

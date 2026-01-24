@@ -298,10 +298,10 @@ impl Storage for SeaOrmStorage {
     async fn update_class_user(
         &self,
         class_id: i64,
-        class_user_id: i64,
+        user_id: i64,
         update_data: UpdateClassUserRequest,
     ) -> Result<Option<ClassUser>> {
-        self.update_class_user_impl(class_id, class_user_id, update_data)
+        self.update_class_user_impl(class_id, user_id, update_data)
             .await
     }
 

@@ -11,6 +11,17 @@ pub struct SubmissionCreator {
     pub id: i64,
     pub username: String,
     pub display_name: Option<String>,
+    pub avatar_url: Option<String>,
+}
+
+/// 提交关联的作业信息
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/submission.ts")]
+pub struct SubmissionHomeworkInfo {
+    pub id: i64,
+    pub title: String,
+    pub max_score: f64,
+    pub deadline: Option<String>,
 }
 
 /// 提交响应
@@ -25,6 +36,9 @@ pub struct SubmissionResponse {
     pub status: String,
     pub submitted_at: String,
     pub grade: Option<SubmissionGradeInfo>,
+    pub version: i32,
+    pub is_late: bool,
+    pub homework: Option<SubmissionHomeworkInfo>,
 }
 
 /// 提交中的评分信息

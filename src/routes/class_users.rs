@@ -12,8 +12,8 @@ use crate::utils::SafeClassIdI64;
 
 use crate::define_safe_i64_extractor;
 
-// 用于从请求路径中安全地提取 class_user_id
-define_safe_i64_extractor!(SafeClassUserID, "class_user_id");
+// 用于从请求路径中安全地提取 user_id（班级成员的用户ID）
+define_safe_i64_extractor!(SafeUserID, "user_id");
 
 // 懒加载的全局 CLASS_STUDENT_SERVICE 实例
 static CLASS_STUDENT_SERVICE: Lazy<ClassUserService> = Lazy::new(ClassUserService::new_lazy);
@@ -42,36 +42,36 @@ pub async fn list_class_users_with_pagination(
 
 pub async fn get_class_user(
     req: HttpRequest,
-    path: web::Path<(SafeClassIdI64, SafeClassUserID)>,
+    path: web::Path<(SafeClassIdI64, SafeUserID)>,
 ) -> ActixResult<HttpResponse> {
     let class_id = path.0.0;
-    let class_user_id = path.1.0;
+    let user_id = path.1.0;
     CLASS_STUDENT_SERVICE
-        .get_class_user(&req, class_id, class_user_id)
+        .get_class_user(&req, class_id, user_id)
         .await
 }
 
 pub async fn update_class_user(
     req: HttpRequest,
-    path: web::Path<(SafeClassIdI64, SafeClassUserID)>,
+    path: web::Path<(SafeClassIdI64, SafeUserID)>,
     update_data: web::Json<UpdateClassUserRequest>,
 ) -> ActixResult<HttpResponse> {
     let class_id = path.0.0;
-    let class_user_id = path.1.0;
+    let user_id = path.1.0;
 
     CLASS_STUDENT_SERVICE
-        .update_class_user(&req, class_id, class_user_id, update_data.into_inner())
+        .update_class_user(&req, class_id, user_id, update_data.into_inner())
         .await
 }
 
 pub async fn delete_class_user(
     req: HttpRequest,
-    path: web::Path<(SafeClassIdI64, SafeClassUserID)>,
+    path: web::Path<(SafeClassIdI64, SafeUserID)>,
 ) -> ActixResult<HttpResponse> {
     let class_id = path.0.0;
-    let class_user_id = path.1.0;
+    let user_id = path.1.0;
     CLASS_STUDENT_SERVICE
-        .delete_class_user(&req, class_id, class_user_id)
+        .delete_class_user(&req, class_id, user_id)
         .await
 }
 
@@ -98,7 +98,7 @@ pub fn configure_class_users_routes(cfg: &mut web::ServiceConfig) {
                     ),
             )
             .service(
-                web::resource("/{class_user_id}")
+                web::resource("/{user_id}")
                     .route(
                         web::get()
                             .to(get_class_user)
