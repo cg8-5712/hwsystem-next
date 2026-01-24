@@ -3,6 +3,7 @@
 use std::collections::HashMap;
 
 use super::SeaOrmStorage;
+use crate::entity::class_users::{Column as ClassUserColumn, Entity as ClassUsers};
 use crate::entity::grades::{Column as GradeColumn, Entity as Grades};
 use crate::entity::homework_files::{
     ActiveModel as HomeworkFileActiveModel, Column as HomeworkFileColumn, Entity as HomeworkFiles,
@@ -15,7 +16,7 @@ use crate::models::{
     homeworks::{
         entities::Homework,
         requests::{CreateHomeworkRequest, HomeworkListQuery, UpdateHomeworkRequest},
-        responses::{HomeworkCreator, HomeworkListItem, HomeworkListResponse, MySubmissionSummary},
+        responses::{HomeworkCreator, HomeworkListItem, HomeworkListResponse, HomeworkStatsSummary, MySubmissionSummary},
     },
 };
 use crate::utils::escape_like_pattern;
@@ -202,16 +203,111 @@ impl SeaOrmStorage {
             }
         }
 
+        // 查询统计信息（如果 include_stats=true）
+        let mut stats_map: HashMap<i64, HomeworkStatsSummary> = HashMap::new();
+        if query.include_stats.unwrap_or(false) && !homeworks.is_empty() {
+            let homework_ids: Vec<i64> = homeworks.iter().map(|h| h.id).collect();
+
+            // 获取每个作业所属班级的学生数（只统计学生，排除教师和助教）
+            for hw in &homeworks {
+                let total_students = ClassUsers::find()
+                    .filter(ClassUserColumn::ClassId.eq(hw.class_id))
+                    .filter(ClassUserColumn::Role.eq("student"))
+                    .count(&self.db)
+                    .await
+                    .map_err(|e| {
+                        HWSystemError::database_operation(format!("查询班级学生数失败: {e}"))
+                    })? as i64;
+
+                stats_map.insert(
+                    hw.id,
+                    HomeworkStatsSummary {
+                        total_students,
+                        submitted_count: 0,
+                        graded_count: 0,
+                    },
+                );
+            }
+
+            // 查询每个作业的提交人数（按 creator_id 去重）
+            let submissions = Submissions::find()
+                .filter(SubmissionColumn::HomeworkId.is_in(homework_ids.clone()))
+                .all(&self.db)
+                .await
+                .map_err(|e| {
+                    HWSystemError::database_operation(format!("查询作业提交失败: {e}"))
+                })?;
+
+            // 按 homework_id 聚合，统计唯一提交者
+            let mut hw_submitters: HashMap<i64, std::collections::HashSet<i64>> = HashMap::new();
+            let mut submission_ids: Vec<i64> = Vec::new();
+            for sub in &submissions {
+                hw_submitters
+                    .entry(sub.homework_id)
+                    .or_default()
+                    .insert(sub.creator_id);
+                submission_ids.push(sub.id);
+            }
+
+            for (hw_id, submitters) in hw_submitters {
+                if let Some(stats) = stats_map.get_mut(&hw_id) {
+                    stats.submitted_count = submitters.len() as i64;
+                }
+            }
+
+            // 查询已评分的提交数
+            if !submission_ids.is_empty() {
+                let grades = Grades::find()
+                    .filter(GradeColumn::SubmissionId.is_in(submission_ids))
+                    .all(&self.db)
+                    .await
+                    .map_err(|e| {
+                        HWSystemError::database_operation(format!("查询评分失败: {e}"))
+                    })?;
+
+                // 建立 submission_id -> homework_id 的映射
+                let sub_to_hw: HashMap<i64, i64> = submissions
+                    .iter()
+                    .map(|s| (s.id, s.homework_id))
+                    .collect();
+
+                // 按 homework 聚合已评分的唯一用户
+                let mut hw_graded_users: HashMap<i64, std::collections::HashSet<i64>> =
+                    HashMap::new();
+                let sub_to_creator: HashMap<i64, i64> = submissions
+                    .iter()
+                    .map(|s| (s.id, s.creator_id))
+                    .collect();
+
+                for grade in grades {
+                    if let (Some(&hw_id), Some(&creator_id)) = (
+                        sub_to_hw.get(&grade.submission_id),
+                        sub_to_creator.get(&grade.submission_id),
+                    ) {
+                        hw_graded_users.entry(hw_id).or_default().insert(creator_id);
+                    }
+                }
+
+                for (hw_id, graded_users) in hw_graded_users {
+                    if let Some(stats) = stats_map.get_mut(&hw_id) {
+                        stats.graded_count = graded_users.len() as i64;
+                    }
+                }
+            }
+        }
+
         // 构造带 creator 和 my_submission 的作业列表
         let items: Vec<HomeworkListItem> = homeworks
             .into_iter()
             .map(|homework| {
                 let creator = creator_map.get(&homework.created_by).cloned();
                 let my_submission = my_submission_map.get(&homework.id).cloned();
+                let stats_summary = stats_map.get(&homework.id).cloned();
                 HomeworkListItem {
                     homework,
                     creator,
                     my_submission,
+                    stats_summary,
                 }
             })
             .collect();

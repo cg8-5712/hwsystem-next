@@ -1,6 +1,6 @@
 # 数据库设计文档
 
-> 版本：v2.0
+> 版本：v2.1
 > 更新日期：2026-01-24
 > 数据库：SQLite（开发）/ PostgreSQL（生产）
 
@@ -42,14 +42,14 @@
 |------|------|------|------|
 | 1 | users | 用户表 | 已存在 |
 | 2 | classes | 班级表 | 已存在 |
-| 3 | class_users | 班级成员关联表 | 已存在（需修改） |
-| 4 | homeworks | 作业表 | 已存在（需修改） |
-| 5 | submissions | 提交表 | 已存在（需重构） |
-| 6 | grades | 评分表 | 已存在（需重构） |
+| 3 | class_users | 班级成员关联表 | 已存在 |
+| 4 | homeworks | 作业表 | 已存在 |
+| 5 | submissions | 提交表 | 已存在 |
+| 6 | grades | 评分表 | 已存在 |
 | 7 | files | 文件表 | 已存在 |
-| 8 | homework_files | 作业附件关联表 | **新增** |
-| 9 | submission_files | 提交附件关联表 | **新增** |
-| 10 | notifications | 通知表 | **新增** |
+| 8 | homework_files | 作业附件关联表 | 已存在 |
+| 9 | submission_files | 提交附件关联表 | 已存在 |
+| 10 | notifications | 通知表 | 已存在 |
 
 ---
 
@@ -61,7 +61,7 @@
 
 ```sql
 CREATE TABLE users (
-    id              TEXT PRIMARY KEY,           -- UUID v4
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,  -- 自增主键
     username        TEXT NOT NULL UNIQUE,       -- 用户名，唯一
     email           TEXT NOT NULL UNIQUE,       -- 邮箱，唯一
     password_hash   TEXT NOT NULL,              -- Argon2 哈希后的密码
@@ -83,7 +83,7 @@ CREATE INDEX idx_users_status ON users(status);
 
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
-| id | TEXT | PK | UUID v4 格式 |
+| id | INTEGER | PK, AUTOINCREMENT | 自增主键 |
 | username | TEXT | UNIQUE, NOT NULL | 用户名，3-32字符 |
 | email | TEXT | UNIQUE, NOT NULL | 邮箱地址 |
 | password_hash | TEXT | NOT NULL | Argon2 哈希 |
@@ -99,10 +99,10 @@ CREATE INDEX idx_users_status ON users(status);
 
 ```sql
 CREATE TABLE classes (
-    id              TEXT PRIMARY KEY,           -- UUID v4
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,  -- 自增主键
     name            TEXT NOT NULL,              -- 班级名称
     description     TEXT,                       -- 班级描述
-    teacher_id      TEXT NOT NULL,              -- 创建者/班主任
+    teacher_id      INTEGER NOT NULL,           -- 创建者/班主任
     invite_code     TEXT NOT NULL UNIQUE,       -- 6位邀请码
     created_at      INTEGER NOT NULL,
     updated_at      INTEGER NOT NULL,
@@ -124,9 +124,9 @@ CREATE UNIQUE INDEX idx_classes_invite_code ON classes(invite_code);
 
 ```sql
 CREATE TABLE class_users (
-    id              TEXT PRIMARY KEY,           -- UUID v4
-    class_id        TEXT NOT NULL,              -- 班级ID
-    user_id         TEXT NOT NULL,              -- 用户ID
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,  -- 自增主键
+    class_id        INTEGER NOT NULL,           -- 班级ID
+    user_id         INTEGER NOT NULL,           -- 用户ID
     role            TEXT NOT NULL DEFAULT 'student', -- 班级角色
     joined_at       INTEGER NOT NULL,           -- 加入时间
 
@@ -156,14 +156,14 @@ CREATE INDEX idx_class_users_user_id ON class_users(user_id);
 
 ```sql
 CREATE TABLE homeworks (
-    id              TEXT PRIMARY KEY,           -- UUID v4
-    class_id        TEXT NOT NULL,              -- 所属班级
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,  -- 自增主键
+    class_id        INTEGER NOT NULL,           -- 所属班级
     title           TEXT NOT NULL,              -- 作业标题
     description     TEXT,                       -- 作业描述（支持 Markdown）
     max_score       REAL NOT NULL DEFAULT 100.0,-- 最高分
     deadline        INTEGER,                    -- 截止时间（Unix timestamp），可选
     allow_late      BOOLEAN NOT NULL DEFAULT FALSE, -- 是否允许迟交
-    created_by      TEXT NOT NULL,              -- 创建者（教师）
+    created_by      INTEGER NOT NULL,           -- 创建者（教师）
     created_at      INTEGER NOT NULL,
     updated_at      INTEGER NOT NULL,
 
@@ -181,15 +181,15 @@ CREATE INDEX idx_homeworks_deadline ON homeworks(deadline);
 - `class_id` → 删除班级时级联删除所有作业
 - `created_by` → 删除创建者时级联删除作业
 
-### 3.5 submissions（提交表）⚠️ 重构
+### 3.5 submissions（提交表）
 
 存储学生作业提交记录，支持版本控制。
 
 ```sql
 CREATE TABLE submissions (
-    id              TEXT PRIMARY KEY,           -- UUID v4
-    homework_id     TEXT NOT NULL,              -- 所属作业
-    creator_id      TEXT NOT NULL,              -- 提交者（学生）
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,  -- 自增主键
+    homework_id     INTEGER NOT NULL,           -- 所属作业
+    creator_id      INTEGER NOT NULL,           -- 提交者（学生）
     version         INTEGER NOT NULL DEFAULT 1, -- 版本号，从1开始递增
     content         TEXT,                       -- 提交内容（文本/Markdown）
     status          TEXT NOT NULL DEFAULT 'pending', -- 提交状态
@@ -227,15 +227,15 @@ pending → late（提交时已超过截止时间）
 late → graded（迟交被评分后，仍保留 is_late=true）
 ```
 
-### 3.6 grades（评分表）⚠️ 重构
+### 3.6 grades（评分表）
 
 存储教师评分记录。
 
 ```sql
 CREATE TABLE grades (
-    id              TEXT PRIMARY KEY,           -- UUID v4
-    submission_id   TEXT NOT NULL UNIQUE,       -- 所属提交（一对一）
-    grader_id       TEXT NOT NULL,              -- 评分者（教师）
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,  -- 自增主键
+    submission_id   INTEGER NOT NULL UNIQUE,    -- 所属提交（一对一）
+    grader_id       INTEGER NOT NULL,           -- 评分者（教师）
     score           REAL NOT NULL,              -- 分数
     comment         TEXT,                       -- 评语
     graded_at       INTEGER NOT NULL,           -- 首次评分时间
@@ -266,8 +266,8 @@ CREATE INDEX idx_grades_grader_id ON grades(grader_id);
 
 ```sql
 CREATE TABLE files (
-    id              TEXT PRIMARY KEY,           -- UUID v4
-    user_id         TEXT,                       -- 上传者
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,  -- 自增主键
+    user_id         INTEGER,                    -- 上传者
     original_name   TEXT NOT NULL,              -- 原始文件名
     stored_name     TEXT NOT NULL,              -- 存储文件名（防冲突）
     file_type       TEXT NOT NULL,              -- MIME 类型
@@ -285,14 +285,14 @@ CREATE INDEX idx_files_user_id ON files(user_id);
 CREATE UNIQUE INDEX idx_files_download_token ON files(download_token);
 ```
 
-### 3.8 homework_files（作业附件关联表）🆕
+### 3.8 homework_files（作业附件关联表）
 
 作业与文件的多对多关系表。
 
 ```sql
 CREATE TABLE homework_files (
-    homework_id     TEXT NOT NULL,
-    file_id         TEXT NOT NULL,
+    homework_id     INTEGER NOT NULL,
+    file_id         INTEGER NOT NULL,
 
     PRIMARY KEY (homework_id, file_id),
     FOREIGN KEY (homework_id) REFERENCES homeworks(id) ON DELETE CASCADE,
@@ -303,14 +303,14 @@ CREATE TABLE homework_files (
 **外键行为**：
 - 删除作业或文件时自动删除关联记录
 
-### 3.9 submission_files（提交附件关联表）🆕
+### 3.9 submission_files（提交附件关联表）
 
 提交与文件的多对多关系表。
 
 ```sql
 CREATE TABLE submission_files (
-    submission_id   TEXT NOT NULL,
-    file_id         TEXT NOT NULL,
+    submission_id   INTEGER NOT NULL,
+    file_id         INTEGER NOT NULL,
 
     PRIMARY KEY (submission_id, file_id),
     FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
@@ -318,19 +318,19 @@ CREATE TABLE submission_files (
 );
 ```
 
-### 3.10 notifications（通知表）🆕
+### 3.10 notifications（通知表）
 
 存储站内通知消息。
 
 ```sql
 CREATE TABLE notifications (
-    id              TEXT PRIMARY KEY,           -- UUID v4
-    user_id         TEXT NOT NULL,              -- 接收者
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,  -- 自增主键
+    user_id         INTEGER NOT NULL,           -- 接收者
     type            TEXT NOT NULL,              -- 通知类型
     title           TEXT NOT NULL,              -- 通知标题
     content         TEXT,                       -- 通知内容
     reference_type  TEXT,                       -- 关联实体类型
-    reference_id    TEXT,                       -- 关联实体ID
+    reference_id    INTEGER,                    -- 关联实体ID
     is_read         BOOLEAN NOT NULL DEFAULT FALSE, -- 是否已读
     created_at      INTEGER NOT NULL,
 
@@ -349,7 +349,7 @@ CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);
 |------|------|------|
 | type | TEXT | 通知类型枚举（见下表） |
 | reference_type | TEXT | `homework` / `submission` / `grade` / `class` |
-| reference_id | TEXT | 关联实体的 UUID |
+| reference_id | INTEGER | 关联实体的 ID |
 
 **通知类型枚举**：
 
@@ -518,54 +518,9 @@ pub enum NotificationType {
 
 ---
 
-## 七、迁移策略
+## 七、查询示例
 
-### 7.1 破坏性重构
-
-由于提交表和评分表需要重大修改，且无生产数据，采用破坏性重构：
-
-1. 删除旧的迁移文件
-2. 创建新的迁移文件 `m20250124_000001_redesign_tables.rs`
-3. 重新建表
-
-### 7.2 迁移文件
-
-```rust
-// migration/src/m20250124_000001_redesign_tables.rs
-
-use sea_orm_migration::prelude::*;
-
-#[derive(DeriveMigrationName)]
-pub struct Migration;
-
-#[async_trait::async_trait]
-impl MigrationTrait for Migration {
-    async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        // 1. 创建 users 表
-        // 2. 创建 classes 表
-        // 3. 创建 class_users 表
-        // 4. 创建 homeworks 表
-        // 5. 创建 submissions 表
-        // 6. 创建 grades 表
-        // 7. 创建 files 表
-        // 8. 创建 homework_files 表
-        // 9. 创建 submission_files 表
-        // 10. 创建 notifications 表
-        Ok(())
-    }
-
-    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        // 按依赖关系逆序删除
-        Ok(())
-    }
-}
-```
-
----
-
-## 八、查询示例
-
-### 8.1 查询某作业的所有提交（教师视图）
+### 7.1 查询某作业的所有提交（教师视图）
 
 ```sql
 SELECT
@@ -590,7 +545,7 @@ WHERE s.homework_id = ?
 ORDER BY s.submitted_at DESC;
 ```
 
-### 8.2 查询某学生对某作业的提交历史
+### 7.2 查询某学生对某作业的提交历史
 
 ```sql
 SELECT
@@ -605,7 +560,7 @@ WHERE s.homework_id = ?
 ORDER BY s.version DESC;
 ```
 
-### 8.3 查询作业提交统计
+### 7.3 查询作业提交统计
 
 ```sql
 SELECT
@@ -626,7 +581,7 @@ WHERE h.id = ?
 GROUP BY h.id;
 ```
 
-### 8.4 查询未提交学生名单
+### 7.4 查询未提交学生名单
 
 ```sql
 SELECT
@@ -645,9 +600,10 @@ WHERE cu.class_id = (SELECT class_id FROM homeworks WHERE id = ?)
 
 ---
 
-## 九、更新日志
+## 八、更新日志
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| v2.1 | 2026-01-24 | 修正 ID 字段类型：TEXT (UUID) → INTEGER (自增主键)，与实际代码保持一致 |
 | v2.0 | 2026-01-24 | 重构 submissions 和 grades 表；新增附件关联表和通知表 |
 | v1.0 | 2025-01-23 | 初始版本 |

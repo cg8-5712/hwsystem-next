@@ -38,6 +38,8 @@ pub struct HomeworkListParams {
     pub class_id: Option<i64>,
     pub created_by: Option<i64>,
     pub search: Option<String>,
+    /// 是否包含统计信息（教师/管理员视角）
+    pub include_stats: Option<bool>,
 }
 
 /// 作业列表查询参数（存储层）
@@ -48,4 +50,6 @@ pub struct HomeworkListQuery {
     pub class_id: Option<i64>,
     pub created_by: Option<i64>,
     pub search: Option<String>,
+    /// 是否包含统计信息
+    pub include_stats: Option<bool>,
 }

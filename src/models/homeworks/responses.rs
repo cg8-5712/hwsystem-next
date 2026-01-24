@@ -50,6 +50,18 @@ pub struct MySubmissionSummary {
     pub score: Option<f64>,
 }
 
+/// 作业统计摘要（用于教师视角列表显示）
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/homework.ts")]
+pub struct HomeworkStatsSummary {
+    /// 班级学生总数
+    pub total_students: i64,
+    /// 已提交人数
+    pub submitted_count: i64,
+    /// 已评分人数
+    pub graded_count: i64,
+}
+
 /// 作业列表项（包含创建者和我的提交状态）
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "../frontend/src/types/generated/homework.ts")]
@@ -59,6 +71,8 @@ pub struct HomeworkListItem {
     pub creator: Option<HomeworkCreator>,
     /// 当前用户的最新提交（仅学生视角有值）
     pub my_submission: Option<MySubmissionSummary>,
+    /// 作业统计摘要（仅教师/管理员视角且请求 include_stats=true 时有值）
+    pub stats_summary: Option<HomeworkStatsSummary>,
 }
 
 /// 作业详情（包含附件和创建者）
