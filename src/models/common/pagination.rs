@@ -22,9 +22,9 @@ pub struct PaginationQuery {
 #[ts(export, export_to = "../frontend/src/types/generated/pagination.ts")]
 pub struct PaginationInfo {
     pub page: i64,
-    pub size: i64,
+    pub page_size: i64,
     pub total: i64,
-    pub pages: i64,
+    pub total_pages: i64,
 }
 
 // 分页列表响应

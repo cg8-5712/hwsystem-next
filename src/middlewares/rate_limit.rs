@@ -127,9 +127,10 @@ fn extract_client_ip(req: &ServiceRequest) -> String {
 
     // 如果连接信息有有效 IP，优先使用
     if let Some(ref ip) = connection_ip
-        && is_valid_ip(ip) {
-            return ip.clone();
-        }
+        && is_valid_ip(ip)
+    {
+        return ip.clone();
+    }
 
     // 从 X-Forwarded-For 头获取（用于反向代理场景）
     // 只取第一个 IP（最接近客户端的）

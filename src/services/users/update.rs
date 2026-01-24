@@ -54,12 +54,14 @@ pub async fn update_user(
 
     // 禁止修改用户角色为管理员（防止权限提升）
     if let Some(ref role) = update_data.role
-        && *role == UserRole::Admin && current_user.role != UserRole::Admin {
-            return Ok(HttpResponse::Forbidden().json(ApiResponse::error_empty(
-                ErrorCode::PermissionDenied,
-                "无权将用户提升为管理员",
-            )));
-        }
+        && *role == UserRole::Admin
+        && current_user.role != UserRole::Admin
+    {
+        return Ok(HttpResponse::Forbidden().json(ApiResponse::error_empty(
+            ErrorCode::PermissionDenied,
+            "无权将用户提升为管理员",
+        )));
+    }
 
     if let Some(ref password) = update_data.password {
         // 验证密码策略

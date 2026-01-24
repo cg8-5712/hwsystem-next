@@ -106,6 +106,35 @@ pub async fn delete_submission(
         .await
 }
 
+/// 分页查询参数
+#[derive(Debug, serde::Deserialize)]
+pub struct PaginationQuery {
+    pub page: Option<i64>,
+    pub size: Option<i64>,
+}
+
+// 获取提交概览（按学生聚合）
+pub async fn get_submission_summary(
+    req: HttpRequest,
+    path: web::Path<i64>, // homework_id
+    query: web::Query<PaginationQuery>,
+) -> ActixResult<HttpResponse> {
+    SUBMISSION_SERVICE
+        .get_submission_summary(&req, path.into_inner(), query.page, query.size)
+        .await
+}
+
+// 获取某学生某作业的所有版本（教师视角）
+pub async fn list_user_submissions_for_teacher(
+    req: HttpRequest,
+    path: web::Path<(i64, i64)>, // (homework_id, user_id)
+) -> ActixResult<HttpResponse> {
+    let (homework_id, user_id) = path.into_inner();
+    SUBMISSION_SERVICE
+        .list_user_submissions_for_teacher(&req, homework_id, user_id)
+        .await
+}
+
 // 配置路由
 pub fn configure_submissions_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -122,6 +151,11 @@ pub fn configure_submissions_routes(cfg: &mut web::ServiceConfig) {
         web::scope("/api/v1/homeworks/{homework_id}/submissions")
             .wrap(middlewares::RequireJWT)
             .route("/my/latest", web::get().to(get_my_latest_submission))
-            .route("/my", web::get().to(list_my_submissions)),
+            .route("/my", web::get().to(list_my_submissions))
+            .route("/summary", web::get().to(get_submission_summary))
+            .route(
+                "/user/{user_id}",
+                web::get().to(list_user_submissions_for_teacher),
+            ),
     );
 }

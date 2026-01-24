@@ -148,9 +148,9 @@ impl SeaOrmStorage {
             items: users.into_iter().map(|m| m.into_user()).collect(),
             pagination: PaginationInfo {
                 page: page as i64,
-                size: size as i64,
+                page_size: size as i64,
                 total: total as i64,
-                pages: pages as i64,
+                total_pages: pages as i64,
             },
         })
     }

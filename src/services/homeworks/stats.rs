@@ -143,8 +143,10 @@ pub async fn get_homework_stats(
     };
 
     // 只统计学生的提交，并为每个学生只保留最新版本
-    let mut latest_submissions: HashMap<i64, &crate::models::submissions::entities::Submission> =
-        HashMap::new();
+    let mut latest_submissions: HashMap<
+        i64,
+        &crate::models::submissions::responses::SubmissionListItem,
+    > = HashMap::new();
     for submission in &submissions_response.items {
         if !student_ids.contains(&submission.creator_id) {
             continue;

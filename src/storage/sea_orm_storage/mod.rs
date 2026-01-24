@@ -147,7 +147,7 @@ use crate::models::{
     submissions::{
         entities::Submission,
         requests::{CreateSubmissionRequest, SubmissionListQuery},
-        responses::SubmissionListResponse,
+        responses::{SubmissionListResponse, SubmissionSummaryResponse},
     },
     users::{
         entities::User,
@@ -455,6 +455,25 @@ impl Storage for SeaOrmStorage {
         user_id: i64,
     ) -> Result<()> {
         self.set_submission_files_impl(submission_id, tokens, user_id)
+            .await
+    }
+
+    async fn get_submission_summary(
+        &self,
+        homework_id: i64,
+        page: i64,
+        size: i64,
+    ) -> Result<SubmissionSummaryResponse> {
+        self.get_submission_summary_impl(homework_id, page, size)
+            .await
+    }
+
+    async fn list_user_submissions_for_teacher(
+        &self,
+        homework_id: i64,
+        user_id: i64,
+    ) -> Result<Vec<Submission>> {
+        self.list_user_submissions_for_teacher_impl(homework_id, user_id)
             .await
     }
 

@@ -3,6 +3,7 @@ pub mod delete;
 pub mod detail;
 pub mod history;
 pub mod list;
+pub mod summary;
 
 use actix_web::{HttpRequest, HttpResponse, Result as ActixResult};
 use std::sync::Arc;
@@ -89,5 +90,26 @@ impl SubmissionService {
         user_id: i64,
     ) -> ActixResult<HttpResponse> {
         delete::delete_submission(self, request, submission_id, user_id).await
+    }
+
+    /// 获取提交概览（按学生聚合）
+    pub async fn get_submission_summary(
+        &self,
+        request: &HttpRequest,
+        homework_id: i64,
+        page: Option<i64>,
+        size: Option<i64>,
+    ) -> ActixResult<HttpResponse> {
+        summary::get_submission_summary(self, request, homework_id, page, size).await
+    }
+
+    /// 获取某学生某作业的所有版本（教师视角）
+    pub async fn list_user_submissions_for_teacher(
+        &self,
+        request: &HttpRequest,
+        homework_id: i64,
+        user_id: i64,
+    ) -> ActixResult<HttpResponse> {
+        summary::list_user_submissions_for_teacher(self, request, homework_id, user_id).await
     }
 }

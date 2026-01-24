@@ -38,11 +38,26 @@ pub struct SubmissionGradeInfo {
     pub graded_at: String,
 }
 
+/// 提交列表项（包含提交者信息）
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/submission.ts")]
+pub struct SubmissionListItem {
+    pub id: i64,
+    pub homework_id: i64,
+    pub creator_id: i64,
+    pub creator: SubmissionCreator,
+    pub version: i32,
+    pub content: Option<String>,
+    pub status: String,
+    pub is_late: bool,
+    pub submitted_at: String,
+}
+
 /// 提交列表响应
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "../frontend/src/types/generated/submission.ts")]
 pub struct SubmissionListResponse {
-    pub items: Vec<Submission>,
+    pub items: Vec<SubmissionListItem>,
     pub pagination: PaginationInfo,
 }
 
@@ -51,4 +66,35 @@ pub struct SubmissionListResponse {
 #[ts(export, export_to = "../frontend/src/types/generated/submission.ts")]
 pub struct UserSubmissionHistoryResponse {
     pub items: Vec<Submission>,
+}
+
+// ============ 提交概览相关（按学生聚合）============
+
+/// 最新提交信息（概览用）
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/submission.ts")]
+pub struct LatestSubmissionInfo {
+    pub id: i64,
+    pub version: i32,
+    pub status: String,
+    pub is_late: bool,
+    pub submitted_at: String,
+}
+
+/// 提交概览项（按学生聚合）
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/submission.ts")]
+pub struct SubmissionSummaryItem {
+    pub creator: SubmissionCreator,
+    pub latest_submission: LatestSubmissionInfo,
+    pub grade: Option<SubmissionGradeInfo>,
+    pub total_versions: i32,
+}
+
+/// 提交概览响应
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/submission.ts")]
+pub struct SubmissionSummaryResponse {
+    pub items: Vec<SubmissionSummaryItem>,
+    pub pagination: PaginationInfo,
 }

@@ -44,12 +44,13 @@ pub async fn get_submission(
                 {
                     // 获取班级信息
                     if let Ok(Some(class)) = storage.get_class_by_id(homework.class_id).await
-                        && class.teacher_id != uid {
-                            return Ok(HttpResponse::Forbidden().json(ApiResponse::error_empty(
-                                ErrorCode::Forbidden,
-                                "只能查看自己班级的提交",
-                            )));
-                        }
+                        && class.teacher_id != uid
+                    {
+                        return Ok(HttpResponse::Forbidden().json(ApiResponse::error_empty(
+                            ErrorCode::Forbidden,
+                            "只能查看自己班级的提交",
+                        )));
+                    }
                 }
             }
         }
