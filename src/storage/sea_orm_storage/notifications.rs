@@ -125,7 +125,7 @@ impl SeaOrmStorage {
             .map_err(|e| HWSystemError::database_operation(format!("查询通知列表失败: {e}")))?;
 
         Ok(NotificationListResponse {
-            notifications: notifications
+            items: notifications
                 .into_iter()
                 .map(|m| m.into_notification())
                 .collect(),

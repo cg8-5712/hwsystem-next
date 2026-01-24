@@ -8,7 +8,7 @@ use crate::models::common::pagination::PaginationInfo;
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "../frontend/src/types/generated/notification.ts")]
 pub struct NotificationListResponse {
-    pub notifications: Vec<Notification>,
+    pub items: Vec<Notification>,
     pub pagination: PaginationInfo,
 }
 

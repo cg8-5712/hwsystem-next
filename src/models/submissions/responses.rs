@@ -45,3 +45,10 @@ pub struct SubmissionListResponse {
     pub items: Vec<Submission>,
     pub pagination: PaginationInfo,
 }
+
+/// 用户提交历史响应（无分页）
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/submission.ts")]
+pub struct UserSubmissionHistoryResponse {
+    pub items: Vec<Submission>,
+}
