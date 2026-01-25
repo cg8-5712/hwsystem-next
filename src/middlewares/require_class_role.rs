@@ -5,7 +5,7 @@
  *
  * ## 使用方法
  *
- * ```rust
+ * ```rust,ignore
  * use actix_web::{web, App, HttpServer};
  * use crate::middlewares::require_jwt::RequireJWT;
  * use crate::middlewares::require_role::RequireClassRole;
@@ -27,7 +27,7 @@
  *
  * 或者验证多个班级角色：
  *
- * ```rust
+ * ```rust,ignore
  * .wrap(RequireClassRole::new_any(&["admin", "moderator"]))  // 任一班级角色即可
  * ```
  */

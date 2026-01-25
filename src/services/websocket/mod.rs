@@ -6,7 +6,7 @@
  * ## 使用方法
  *
  * 客户端通过以下 URL 连接：
- * ```
+ * ```text
  * ws://host/api/v1/ws?token=<access_token>
  * ```
  *

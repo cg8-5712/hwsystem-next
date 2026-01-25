@@ -5,7 +5,7 @@
  *
  * ## 使用方法
  *
- * ```rust
+ * ```rust,ignore
  * use actix_web::{web, App, HttpServer};
  * use crate::middlewares::require_jwt::RequireJWT;
  * use crate::middlewares::require_role::RequireRole;
@@ -27,7 +27,7 @@
  *
  * 或者验证多个角色：
  *
- * ```rust
+ * ```rust,ignore
  * .wrap(RequireRole::new_any(UserRole::admin_roles()))  // 任一角色即可
  * ```
  */

@@ -6,7 +6,7 @@
  * ## 使用方法
  *
  * 1. 在路由上应用中间件：
- * ```rust
+ * ```rust,ignore
  * use actix_web::{web, App, HttpServer};
  * use crate::middlewares::require_jwt::RequireJWT;
  *
@@ -21,7 +21,7 @@
  * ```
  *
  * 2. 在处理程序中提取用户信息：
- * ```rust
+ * ```rust,ignore
  * use actix_web::{web, HttpRequest, HttpResponse, Result};
  * use crate::middlewares::require_jwt::RequireJWT;
  *
@@ -30,22 +30,22 @@
  *     if let Some(claims) = RequireJWT::extract_user_claims(&req) {
  *         return Ok(HttpResponse::Ok().json(format!("Hello, {}! Role: {}", claims.username, claims.role)));
  *     }
- *     
+ *
  *     // 或者只提取用户ID
  *     if let Some(user_id) = RequireJWT::extract_user_id(&req) {
  *         return Ok(HttpResponse::Ok().json(format!("User ID: {}", user_id)));
  *     }
- *     
+ *
  *     // 检查用户角色
  *     if RequireJWT::has_role(&req, "admin") {
  *         return Ok(HttpResponse::Ok().json("Admin access granted"));
  *     }
- *     
+ *
  *     // 检查用户是否具有任一角色
  *     if RequireJWT::has_any_role(&req, &["admin", "moderator"]) {
  *         return Ok(HttpResponse::Ok().json("Admin or moderator access granted"));
  *     }
- *     
+ *
  *     Ok(HttpResponse::InternalServerError().finish())
  * }
  * ```

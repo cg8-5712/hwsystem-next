@@ -5,7 +5,7 @@
  *
  * ## 使用方法
  *
- * ```rust
+ * ```rust,ignore
  * use actix_web::{web, App};
  * use crate::middlewares::rate_limit::RateLimit;
  *

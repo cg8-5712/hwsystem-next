@@ -148,11 +148,11 @@ pub async fn export_class_report(
         }
     };
 
-    // 只统计学生
+    // 统计需要提交作业的成员（排除教师）
     let students: Vec<_> = class_users_response
         .items
         .iter()
-        .filter(|cu| cu.role == ClassUserRole::Student)
+        .filter(|cu| cu.role != ClassUserRole::Teacher)
         .collect();
     let total_students = students.len() as i64;
     let student_ids: HashSet<i64> = students.iter().map(|cu| cu.user_id).collect();
