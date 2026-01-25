@@ -54,6 +54,13 @@ pub async fn delete_class(req: HttpRequest, class_id: SafeClassIdI64) -> ActixRe
     CLASS_SERVICE.delete_class(&req, class_id.0).await
 }
 
+pub async fn export_class_report(
+    req: HttpRequest,
+    class_id: SafeClassIdI64,
+) -> ActixResult<HttpResponse> {
+    CLASS_SERVICE.export_class_report(&req, class_id.0).await
+}
+
 // 配置路由
 pub fn configure_classes_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -99,6 +106,14 @@ pub fn configure_classes_routes(cfg: &mut web::ServiceConfig) {
                             // 教师删除自己班级，管理员可以删除所有班级
                             .wrap(middlewares::RequireRole::new_any(UserRole::teacher_roles())),
                     ),
+            )
+            .service(
+                web::resource("/{class_id}/export").route(
+                    web::get()
+                        .to(export_class_report)
+                        // 教师、课代表、管理员可以导出报表（权限在 service 层进一步验证）
+                        .wrap(middlewares::RequireRole::new_any(UserRole::all_roles())),
+                ),
             ),
     );
 }

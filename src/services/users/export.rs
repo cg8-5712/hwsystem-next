@@ -126,9 +126,7 @@ fn export_xlsx(users: &[crate::models::users::entities::User]) -> ActixResult<Ht
         worksheet.write_string(row, 1, &user.username).ok();
         worksheet.write_string(row, 2, &user.email).ok();
         worksheet.write_string(row, 3, user.role.to_string()).ok();
-        worksheet
-            .write_string(row, 4, user.status.to_string())
-            .ok();
+        worksheet.write_string(row, 4, user.status.to_string()).ok();
         worksheet
             .write_string(row, 5, user.display_name.as_deref().unwrap_or(""))
             .ok();

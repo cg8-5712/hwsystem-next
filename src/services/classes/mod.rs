@@ -1,5 +1,6 @@
 pub mod create;
 pub mod delete;
+pub mod export;
 pub mod get;
 pub mod list;
 pub mod update;
@@ -79,5 +80,14 @@ impl ClassService {
         class_id: i64,
     ) -> ActixResult<HttpResponse> {
         delete::delete_class(self, req, class_id).await
+    }
+
+    // 导出班级报表
+    pub async fn export_class_report(
+        &self,
+        req: &HttpRequest,
+        class_id: i64,
+    ) -> ActixResult<HttpResponse> {
+        export::export_class_report(self, req, class_id).await
     }
 }

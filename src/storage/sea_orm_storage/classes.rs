@@ -22,8 +22,13 @@ impl SeaOrmStorage {
         let now = chrono::Utc::now().timestamp();
         let invite_code = generate_random_code(8); // 自动生成邀请码
 
+        // teacher_id 必须由服务层确保已设置
+        let teacher_id = req.teacher_id.ok_or_else(|| {
+            HWSystemError::database_operation("teacher_id must be set before calling create_class")
+        })?;
+
         let model = ActiveModel {
-            teacher_id: Set(req.teacher_id),
+            teacher_id: Set(teacher_id),
             name: Set(req.name),
             description: Set(req.description),
             invite_code: Set(invite_code),

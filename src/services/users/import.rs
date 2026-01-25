@@ -350,9 +350,7 @@ fn parse_xlsx(data: &[u8]) -> Result<Vec<ImportRow>, ImportParseError> {
     let mut rows_iter = range.rows();
 
     // 读取表头
-    let header_row = rows_iter
-        .next()
-        .ok_or(ImportParseError::EmptyFile)?;
+    let header_row = rows_iter.next().ok_or(ImportParseError::EmptyFile)?;
     let header_map: std::collections::HashMap<_, _> = header_row
         .iter()
         .enumerate()

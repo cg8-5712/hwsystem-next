@@ -95,6 +95,16 @@ pub async fn get_homework_stats(
         .await
 }
 
+// 导出作业统计
+pub async fn export_homework_stats(
+    req: HttpRequest,
+    path: web::Path<i64>,
+) -> ActixResult<HttpResponse> {
+    HOMEWORK_SERVICE
+        .export_homework_stats(&req, path.into_inner())
+        .await
+}
+
 // 配置路由
 pub fn configure_homeworks_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -132,6 +142,11 @@ pub fn configure_homeworks_routes(cfg: &mut web::ServiceConfig) {
                 web::resource("/{id}/stats")
                     // 权限在业务层检查（允许教师、课代表、管理员）
                     .route(web::get().to(get_homework_stats)),
+            )
+            .service(
+                web::resource("/{id}/stats/export")
+                    // 权限在业务层检查（允许教师、课代表、管理员）
+                    .route(web::get().to(export_homework_stats)),
             ),
     );
 }

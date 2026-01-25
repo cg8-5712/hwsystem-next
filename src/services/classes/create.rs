@@ -29,13 +29,16 @@ pub async fn create_class(
         }
     };
 
-    // 权限校验
-    if let Err(resp) = check_class_create_permission(role, uid, &class_data, &storage).await {
-        return Ok(resp);
-    }
+    // 权限校验并确定最终的 teacher_id
+    let teacher_id = match check_class_create_permission(role, uid, &class_data, &storage).await {
+        Ok(tid) => tid,
+        Err(resp) => return Ok(resp),
+    };
 
-    // 创建班级
-    let teacher_id = class_data.teacher_id;
+    // 创建班级（使用确定后的 teacher_id）
+    let mut class_data = class_data;
+    class_data.teacher_id = Some(teacher_id);
+
     match storage.create_class(class_data).await {
         Ok(class) => {
             // 将创建者（教师）加入 class_users 表
@@ -58,54 +61,68 @@ pub async fn create_class(
 }
 
 /// 权限校验辅助函数
+/// 返回值：成功时返回最终确定的 teacher_id
 async fn check_class_create_permission(
     role: Option<UserRole>,
     uid: i64,
     class_data: &CreateClassRequest,
     storage: &Arc<dyn Storage>,
-) -> Result<(), HttpResponse> {
+) -> Result<i64, HttpResponse> {
     match role {
-        Some(UserRole::Admin) => match storage.get_user_by_id(class_data.teacher_id).await {
-            Ok(Some(user)) => {
-                if user.role != UserRole::Teacher {
+        Some(UserRole::Admin) => {
+            // 管理员必须指定 teacher_id
+            let teacher_id = match class_data.teacher_id {
+                Some(id) => id,
+                None => {
                     return Err(HttpResponse::BadRequest().json(ApiResponse::error_empty(
-                        ErrorCode::ClassPermissionDenied,
-                        "Admin can only create classes for teachers",
+                        ErrorCode::BadRequest,
+                        "Admin must specify teacher_id",
                     )));
                 }
-            }
-            Ok(None) => {
-                return Err(HttpResponse::NotFound().json(ApiResponse::error_empty(
+            };
+
+            match storage.get_user_by_id(teacher_id).await {
+                Ok(Some(user)) => {
+                    if user.role != UserRole::Teacher {
+                        return Err(HttpResponse::BadRequest().json(ApiResponse::error_empty(
+                            ErrorCode::ClassPermissionDenied,
+                            "Admin can only create classes for teachers",
+                        )));
+                    }
+                    Ok(teacher_id)
+                }
+                Ok(None) => Err(HttpResponse::NotFound().json(ApiResponse::error_empty(
                     ErrorCode::UserNotFound,
-                    "User not found",
-                )));
+                    "Teacher not found",
+                ))),
+                Err(e) => {
+                    error!("Failed to get user by id: {}", e);
+                    Err(
+                        HttpResponse::InternalServerError().json(ApiResponse::error_empty(
+                            ErrorCode::InternalServerError,
+                            "Internal server error while fetching user",
+                        )),
+                    )
+                }
             }
-            Err(e) => {
-                error!("Failed to get user by id: {}", e);
-                return Err(
-                    HttpResponse::InternalServerError().json(ApiResponse::error_empty(
-                        ErrorCode::InternalServerError,
-                        "Internal server error while fetching user",
-                    )),
-                );
-            }
-        },
+        }
         Some(UserRole::Teacher) => {
-            if class_data.teacher_id != uid {
+            // 教师：如果未指定 teacher_id，自动使用当前用户 ID
+            let teacher_id = class_data.teacher_id.unwrap_or(uid);
+
+            if teacher_id != uid {
                 return Err(HttpResponse::Forbidden().json(ApiResponse::error_empty(
                     ErrorCode::ClassPermissionDenied,
                     "You do not have permission to create a class for another teacher",
                 )));
             }
+            Ok(teacher_id)
         }
-        _ => {
-            return Err(HttpResponse::Forbidden().json(ApiResponse::error_empty(
-                ErrorCode::ClassPermissionDenied,
-                "You do not have permission to create a class",
-            )));
-        }
+        _ => Err(HttpResponse::Forbidden().json(ApiResponse::error_empty(
+            ErrorCode::ClassPermissionDenied,
+            "You do not have permission to create a class",
+        ))),
     }
-    Ok(())
 }
 
 /// 错误响应辅助函数

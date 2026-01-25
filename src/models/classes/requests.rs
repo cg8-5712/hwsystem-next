@@ -13,10 +13,11 @@ pub struct ClassQueryParams {
 }
 
 // 创建班级请求
+// teacher_id 可选：教师创建时自动填充为当前用户 ID，管理员创建时必填
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "../frontend/src/types/generated/class.ts")]
 pub struct CreateClassRequest {
-    pub teacher_id: i64,
+    pub teacher_id: Option<i64>,
     pub name: String,
     pub description: Option<String>,
 }
