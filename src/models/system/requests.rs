@@ -23,7 +23,8 @@ pub struct UpdateSettingItem {
 }
 
 /// 审计日志查询参数
-#[derive(Debug, Clone, Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize, Default, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/system.ts")]
 pub struct SettingAuditQuery {
     pub key: Option<String>,
     pub page: Option<i64>,

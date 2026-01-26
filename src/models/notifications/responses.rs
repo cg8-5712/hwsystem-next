@@ -16,7 +16,7 @@ pub struct NotificationListResponse {
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "../frontend/src/types/generated/notification.ts")]
 pub struct UnreadCountResponse {
-    pub count: i64,
+    pub unread_count: i64,
 }
 
 /// 标记全部已读响应

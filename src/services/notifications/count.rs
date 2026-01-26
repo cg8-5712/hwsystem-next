@@ -13,7 +13,9 @@ pub async fn get_unread_count(
 
     match storage.get_unread_notification_count(user_id).await {
         Ok(count) => Ok(HttpResponse::Ok().json(ApiResponse::success(
-            UnreadCountResponse { count },
+            UnreadCountResponse {
+                unread_count: count,
+            },
             "查询成功",
         ))),
         Err(e) => Ok(

@@ -107,8 +107,9 @@ pub async fn delete_submission(
 }
 
 /// 分页查询参数
-#[derive(Debug, serde::Deserialize)]
-pub struct PaginationQuery {
+#[derive(Debug, serde::Deserialize, ts_rs::TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/submission.ts")]
+pub struct SubmissionSummaryQuery {
     pub page: Option<i64>,
     pub size: Option<i64>,
     /// 筛选是否已批改：true=已批改，false=待批改，None=全部
@@ -119,7 +120,7 @@ pub struct PaginationQuery {
 pub async fn get_submission_summary(
     req: HttpRequest,
     path: web::Path<i64>, // homework_id
-    query: web::Query<PaginationQuery>,
+    query: web::Query<SubmissionSummaryQuery>,
 ) -> ActixResult<HttpResponse> {
     SUBMISSION_SERVICE
         .get_submission_summary(
