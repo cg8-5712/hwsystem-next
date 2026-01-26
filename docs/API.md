@@ -1,6 +1,6 @@
 # API 文档
 
-> 版本：v2.8
+> 版本：v2.9
 > 更新日期：2026-01-26
 > 基础路径：`/api/v1`
 
@@ -366,11 +366,13 @@ Authorization: Bearer <access_token>
 **响应**：
 ```json
 {
-    "imported_count": 10,
-    "failed_count": 2,
+    "total": 12,
+    "success": 10,
+    "skipped": 0,
+    "failed": 2,
     "errors": [
-        {"row": 3, "message": "用户名已存在"},
-        {"row": 7, "message": "邮箱格式无效"}
+        {"row": 3, "field": "username", "message": "用户名已存在"},
+        {"row": 7, "field": "email", "message": "邮箱格式无效"}
     ]
 }
 ```
@@ -387,6 +389,34 @@ Authorization: Bearer <access_token>
 | format | string | 模板格式：`csv` / `xlsx`（默认 csv） |
 
 **响应**：文件下载
+
+### 3.9 GET /users/me/stats
+
+获取当前用户的综合统计。
+
+**权限**：JWT
+
+**响应**：
+```json
+{
+    "class_count": 3,
+    "total_students": 90,
+    "homework_pending": 5,
+    "homework_submitted": 3,
+    "homework_graded": 12,
+    "pending_review": 15,
+    "server_time": "2026-01-26T12:00:00Z"
+}
+```
+
+**说明**：
+- `class_count`：用户加入/创建的班级数量
+- `total_students`：教师视角下的学生总数（学生视角为 0）
+- `homework_pending`：学生视角下待完成的作业数
+- `homework_submitted`：学生视角下已提交待批改的作业数
+- `homework_graded`：学生视角下已批改的作业数
+- `pending_review`：教师视角下待批改的提交数（学生视角为 0）
+- `server_time`：服务器时间（ISO 8601），用于前端统一时间判断
 
 ---
 
@@ -474,7 +504,7 @@ Authorization: Bearer <access_token>
 **错误码**：
 - 1000：管理员未指定 teacher_id
 - 4000：指定的教师不存在
-- 5005：指定的用户不是教师角色
+- 5005：无权限创建班级（班级权限被拒绝）。典型触发场景：指定的用户不是教师角色、教师在请求中填写了非本人 `teacher_id`、非 Teacher/Admin 角色尝试创建班级
 
 ### 4.3 GET /classes/code/{code}
 
@@ -807,7 +837,8 @@ Authorization: Bearer <access_token>
         {
             "id": 1,
             "username": "student1",
-            "display_name": "张三"
+            "display_name": "张三",
+            "avatar_url": null
         }
     ]
 }
@@ -847,18 +878,73 @@ Authorization: Bearer <access_token>
 ```json
 {
     "total_homeworks": 15,
+    "pending_review": 25,
     "total_submissions": 120,
-    "pending_grade": 25,
-    "classes": [
-        {
-            "class_id": 1,
-            "class_name": "数据结构",
-            "homework_count": 5,
-            "submission_count": 40
-        }
-    ]
+    "graded_submissions": 95
 }
 ```
+
+### 6.10 GET /homeworks/all
+
+获取跨班级作业列表。
+
+**权限**：JWT
+
+**查询参数**：
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| page | number | 页码 |
+| size | number | 每页数量 |
+| status | string | 按用户提交状态筛选：`pending`/`submitted`/`graded` |
+| deadline_filter | string | 按截止时间筛选：`active`/`expired`/`all` |
+| search | string | 搜索作业标题 |
+| include_stats | boolean | 是否包含统计摘要（教师视角） |
+
+**响应**：
+```json
+{
+    "items": [
+        {
+            "id": 1,
+            "class_id": 1,
+            "title": "链表实现",
+            "description": "...",
+            "max_score": 100.0,
+            "deadline": "2026-01-25T00:00:00Z",
+            "allow_late": false,
+            "created_by": 2,
+            "created_at": "...",
+            "updated_at": "...",
+            "creator": {
+                "id": 2,
+                "username": "teacher1",
+                "display_name": "张老师",
+                "avatar_url": null
+            },
+            "my_submission": {
+                "id": 1,
+                "version": 2,
+                "status": "graded",
+                "is_late": false,
+                "score": 85.0
+            },
+            "stats_summary": null
+        }
+    ],
+    "pagination": {
+        "page": 1,
+        "page_size": 20,
+        "total": 50,
+        "total_pages": 3
+    },
+    "server_time": "2026-01-26T12:00:00Z"
+}
+```
+
+**说明**：
+- `my_submission`：当前用户的最新提交（仅学生视角有值）
+- `stats_summary`：作业统计摘要（仅教师/管理员视角且 `include_stats=true` 时有值）
+- `server_time`：服务器时间，用于前端统一时间判断
 
 ---
 
@@ -1137,17 +1223,17 @@ Authorization: Bearer <access_token>
 - `file`：文件内容
 
 **限制**：
-- 最大 10MB
-- 允许类型：`image/png`, `image/jpeg`, `application/pdf`, `text/plain`, `application/zip`
+- 最大 10MB（可通过系统设置调整）
+- 允许类型：`.png`, `.jpg`, `.jpeg`, `.gif`, `.pdf`, `.txt`, `.zip`（可通过系统设置调整）
 
 **响应**：
 ```json
 {
-    "id": 1,
-    "original_name": "document.pdf",
-    "file_type": "application/pdf",
-    "file_size": 102400,
-    "download_token": "abc123..."
+    "download_token": "abc123...",
+    "file_name": "document.pdf",
+    "size": 102400,
+    "content_type": "application/pdf",
+    "created_at": "2026-01-26T12:00:00Z"
 }
 ```
 
@@ -1269,6 +1355,20 @@ Authorization: Bearer <access_token>
 
 **建议**：客户端每 30 秒发送一次 ping
 
+### 11.3 GET /ws/status
+
+获取 WebSocket 服务状态。
+
+**权限**：JWT
+
+**响应**：
+```json
+{
+    "online_users": 123,
+    "status": "ok"
+}
+```
+
 ---
 
 ## 十二、系统设置
@@ -1282,8 +1382,11 @@ Authorization: Bearer <access_token>
 **响应**：
 ```json
 {
-    "upload_max_size": 10485760,
-    "upload_allowed_types": ["image/png", "image/jpeg", "application/pdf"]
+    "system_name": "作业管理系统",
+    "max_file_size": 10485760,
+    "allowed_file_types": [".png", ".jpg", ".jpeg", ".gif", ".pdf", ".txt", ".zip"],
+    "environment": "development",
+    "log_level": "info"
 }
 ```
 
@@ -1296,13 +1399,14 @@ Authorization: Bearer <access_token>
 **响应**：
 ```json
 {
-    "items": [
+    "settings": [
         {
             "key": "upload_max_size",
             "value": "10485760",
             "value_type": "integer",
             "description": "文件上传大小限制（字节）",
-            "updated_at": "2026-01-24T12:00:00Z"
+            "updated_at": "2026-01-24T12:00:00Z",
+            "updated_by": 1
         }
     ]
 }
@@ -1340,7 +1444,7 @@ Authorization: Bearer <access_token>
 **响应**：
 ```json
 {
-    "items": [
+    "audits": [
         {
             "id": 1,
             "setting_key": "upload_max_size",
@@ -1350,7 +1454,13 @@ Authorization: Bearer <access_token>
             "changed_at": "2026-01-24T12:00:00Z",
             "ip_address": "192.168.1.1"
         }
-    ]
+    ],
+    "pagination": {
+        "page": 1,
+        "page_size": 20,
+        "total": 10,
+        "total_pages": 1
+    }
 }
 ```
 
@@ -1389,6 +1499,7 @@ Authorization: Bearer <access_token>
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| v2.9 | 2026-01-26 | 新增端点：`/users/me/stats`、`/homeworks/all`、`/ws/status`；修正响应格式：文件上传、系统设置、用户导入、教师统计、审计日志 |
 | v2.8 | 2026-01-26 | 补充缺失端点（用户导入导出、作业统计、班级导出、系统设置管理）；补全错误码；修正响应字段 |
 | v2.7 | 2026-01-24 | 修正文档与代码一致：ID 改为数字类型；分页参数 `page_size` → `size`；标注未实现端点；新增提交概览端点 |
 | v2.6 | 2026-01-24 | 统一 API 响应格式：通知列表 `notifications` → `items`；提交历史返回 `{ items: [...] }` 结构 |

@@ -36,20 +36,23 @@ pub async fn get_submission_summary(
     };
 
     // 验证作业存在
-    let homework = storage
-        .get_homework_by_id(homework_id)
-        .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("查询作业失败: {e}")))?;
-
-    let homework = match homework {
-        Some(hw) => hw,
-        None => {
+    let homework = match storage.get_homework_by_id(homework_id).await {
+        Ok(Some(hw)) => hw,
+        Ok(None) => {
             return Ok(
                 HttpResponse::NotFound().json(ApiResponse::<()>::error_empty(
                     ErrorCode::HomeworkNotFound,
                     "作业不存在",
                 )),
             );
+        }
+        Err(e) => {
+            return Ok(HttpResponse::InternalServerError().json(
+                ApiResponse::<()>::error_empty(
+                    ErrorCode::InternalServerError,
+                    format!("查询作业失败: {e}"),
+                ),
+            ));
         }
     };
 
@@ -102,12 +105,20 @@ pub async fn get_submission_summary(
     let page = page.unwrap_or(1);
     let size = size.unwrap_or(20);
 
-    let summary = storage
+    let summary = match storage
         .get_submission_summary(homework_id, page, size, include_grades, graded)
         .await
-        .map_err(|e| {
-            actix_web::error::ErrorInternalServerError(format!("查询提交概览失败: {e}"))
-        })?;
+    {
+        Ok(s) => s,
+        Err(e) => {
+            return Ok(HttpResponse::InternalServerError().json(
+                ApiResponse::<()>::error_empty(
+                    ErrorCode::InternalServerError,
+                    format!("查询提交概览失败: {e}"),
+                ),
+            ));
+        }
+    };
 
     Ok(HttpResponse::Ok().json(ApiResponse::success(summary, "查询成功")))
 }
@@ -135,20 +146,23 @@ pub async fn list_user_submissions_for_teacher(
     };
 
     // 验证作业存在
-    let homework = storage
-        .get_homework_by_id(homework_id)
-        .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("查询作业失败: {e}")))?;
-
-    let homework = match homework {
-        Some(hw) => hw,
-        None => {
+    let homework = match storage.get_homework_by_id(homework_id).await {
+        Ok(Some(hw)) => hw,
+        Ok(None) => {
             return Ok(
                 HttpResponse::NotFound().json(ApiResponse::<()>::error_empty(
                     ErrorCode::HomeworkNotFound,
                     "作业不存在",
                 )),
             );
+        }
+        Err(e) => {
+            return Ok(HttpResponse::InternalServerError().json(
+                ApiResponse::<()>::error_empty(
+                    ErrorCode::InternalServerError,
+                    format!("查询作业失败: {e}"),
+                ),
+            ));
         }
     };
 
@@ -198,12 +212,20 @@ pub async fn list_user_submissions_for_teacher(
     };
 
     // 获取学生提交历史
-    let submissions = storage
+    let submissions = match storage
         .list_user_submissions_for_teacher(homework_id, user_id, include_grades)
         .await
-        .map_err(|e| {
-            actix_web::error::ErrorInternalServerError(format!("查询提交历史失败: {e}"))
-        })?;
+    {
+        Ok(s) => s,
+        Err(e) => {
+            return Ok(HttpResponse::InternalServerError().json(
+                ApiResponse::<()>::error_empty(
+                    ErrorCode::InternalServerError,
+                    format!("查询提交历史失败: {e}"),
+                ),
+            ));
+        }
+    };
 
     Ok(HttpResponse::Ok().json(ApiResponse::success(
         crate::models::submissions::responses::UserSubmissionHistoryResponse { items: submissions },

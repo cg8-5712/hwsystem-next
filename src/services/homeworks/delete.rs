@@ -19,7 +19,7 @@ pub async fn delete_homework(
         Ok(Some(hw)) => hw,
         Ok(None) => {
             return Ok(HttpResponse::NotFound()
-                .json(ApiResponse::error_empty(ErrorCode::NotFound, "作业不存在")));
+                .json(ApiResponse::error_empty(ErrorCode::HomeworkNotFound, "作业不存在")));
         }
         Err(e) => {
             return Ok(
@@ -53,7 +53,7 @@ pub async fn delete_homework(
     match storage.delete_homework(homework_id).await {
         Ok(true) => Ok(HttpResponse::Ok().json(ApiResponse::success_empty("作业已删除"))),
         Ok(false) => Ok(HttpResponse::NotFound()
-            .json(ApiResponse::error_empty(ErrorCode::NotFound, "作业不存在"))),
+            .json(ApiResponse::error_empty(ErrorCode::HomeworkNotFound, "作业不存在"))),
         Err(e) => Ok(
             HttpResponse::InternalServerError().json(ApiResponse::error_empty(
                 ErrorCode::InternalServerError,

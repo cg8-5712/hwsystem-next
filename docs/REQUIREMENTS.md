@@ -1,6 +1,6 @@
 # 作业管理系统需求规格
 
-> 版本：v2.2
+> 版本：v2.3
 > 更新日期：2026-01-26
 > 作者：AptS-1547, AptS-1548
 
@@ -190,7 +190,7 @@ if homework.deadline.is_some() && now > homework.deadline {
 | 用户注册 | ✅ 已实现 | |
 | Token 刷新 | ✅ 已实现 | Refresh Token 机制 |
 | 获取当前用户 | ✅ 已实现 | |
-| 登出 | ✅ 已实现 | 清除 Refresh Token |
+| 登出 | ❌ 未实现 | 清除 Refresh Token |
 | 登录速率限制 | ✅ 已实现 | 5次/分钟/IP |
 | 密码强度验证 | ✅ 已实现 | 8位+大小写+数字+弱密码检测 |
 
@@ -220,7 +220,7 @@ if homework.deadline.is_some() && now > homework.deadline {
 | 作业详情 | ✅ 已实现 | |
 | 作业列表 | ✅ 已实现 | 完整分页查询 |
 | 作业统计 | ✅ 已实现 | 提交率、成绩分布、未交名单 |
-| 作业附件 | ❌ 待实现 | 关联 files 表 |
+| 作业附件 | ✅ 已实现 | homework_files 关联表 |
 
 ### 4.5 提交管理
 
@@ -230,7 +230,7 @@ if homework.deadline.is_some() && now > homework.deadline {
 | 查看提交历史 | ✅ 已实现 | 某学生所有版本 |
 | 查看最新提交 | ✅ 已实现 | |
 | 撤回提交 | ⚠️ 部分实现 | 路由已有，缺少截止前可撤回的业务校验 |
-| 提交附件 | ❌ 待实现 | 关联 files 表 |
+| 提交附件 | ✅ 已实现 | submission_files 关联表 |
 
 ### 4.6 评分管理
 
@@ -246,8 +246,8 @@ if homework.deadline.is_some() && now > homework.deadline {
 |------|------|------|
 | 文件上传 | ✅ 已实现 | |
 | 文件下载 | ✅ 已实现 | Token 化 |
-| 附件关联 | ❌ 待实现 | homework_files, submission_files |
-| 引用计数 | ❌ 待实现 | 自动清理无引用文件 |
+| 附件关联 | ✅ 已实现 | homework_files, submission_files |
+| 引用计数 | ✅ 已实现 | increment_file_citation_impl |
 
 ### 4.8 通知系统
 
@@ -266,6 +266,9 @@ if homework.deadline.is_some() && now > homework.deadline {
 | 成绩分布 | ✅ 已实现 | 平均分、最高分、最低分 |
 | 未交名单 | ✅ 已实现 | 在作业统计 API 中 |
 | 学生完成情况 | ✅ 已实现 | GET /homeworks/my/stats |
+| 跨班级作业列表 | ✅ 已实现 | GET /homeworks/all |
+| 用户综合统计 | ✅ 已实现 | GET /users/me/stats |
+| WebSocket 状态 | ✅ 已实现 | GET /ws/status |
 
 ---
 
@@ -328,6 +331,7 @@ if homework.deadline.is_some() && now > homework.deadline {
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| v2.3 | 2026-01-26 | 修正功能状态：登出未实现、附件功能已实现；新增跨班级作业列表、用户综合统计、WebSocket 状态 |
 | v2.2 | 2026-01-26 | 更新功能状态：角色变更通知、学生完成情况统计、通知消息类型已实现 |
 | v2.1 | 2026-01-24 | 根据实现审计更新功能状态：认证、作业、提交、评分、通知、统计模块 |
 | v2.0 | 2026-01-24 | 重新设计：版本控制、通知系统、权限矩阵 |

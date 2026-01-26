@@ -51,7 +51,7 @@ fn export_csv(users: &[crate::models::users::entities::User]) -> ActixResult<Htt
     let mut wtr = csv::Writer::from_writer(vec![]);
 
     // 写入表头
-    wtr.write_record([
+    if let Err(e) = wtr.write_record([
         "id",
         "username",
         "email",
@@ -59,15 +59,17 @@ fn export_csv(users: &[crate::models::users::entities::User]) -> ActixResult<Htt
         "status",
         "display_name",
         "created_at",
-    ])
-    .map_err(|e| {
+    ]) {
         error!("CSV 写入失败: {}", e);
-        actix_web::error::ErrorInternalServerError(format!("CSV 写入失败: {e}"))
-    })?;
+        return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+            ErrorCode::ExportFailed,
+            format!("CSV 写入失败: {e}"),
+        )));
+    }
 
     // 写入数据
     for user in users {
-        wtr.write_record([
+        if let Err(e) = wtr.write_record([
             user.id.to_string(),
             user.username.clone(),
             user.email.clone(),
@@ -75,17 +77,25 @@ fn export_csv(users: &[crate::models::users::entities::User]) -> ActixResult<Htt
             user.status.to_string(),
             user.display_name.clone().unwrap_or_default(),
             user.created_at.to_rfc3339(),
-        ])
-        .map_err(|e| {
+        ]) {
             error!("CSV 写入失败: {}", e);
-            actix_web::error::ErrorInternalServerError(format!("CSV 写入失败: {e}"))
-        })?;
+            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                ErrorCode::ExportFailed,
+                format!("CSV 写入失败: {e}"),
+            )));
+        }
     }
 
-    let data = wtr.into_inner().map_err(|e| {
-        error!("CSV 生成失败: {}", e);
-        actix_web::error::ErrorInternalServerError(format!("CSV 生成失败: {e}"))
-    })?;
+    let data = match wtr.into_inner() {
+        Ok(d) => d,
+        Err(e) => {
+            error!("CSV 生成失败: {}", e);
+            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                ErrorCode::ExportFailed,
+                format!("CSV 生成失败: {e}"),
+            )));
+        }
+    };
 
     Ok(HttpResponse::Ok()
         .content_type("text/csv; charset=utf-8")
@@ -111,12 +121,13 @@ fn export_xlsx(users: &[crate::models::users::entities::User]) -> ActixResult<Ht
         "创建时间",
     ];
     for (col, header) in headers.iter().enumerate() {
-        worksheet
-            .write_string_with_format(0, col as u16, *header, &header_format)
-            .map_err(|e| {
-                error!("XLSX 写入失败: {}", e);
-                actix_web::error::ErrorInternalServerError(format!("XLSX 写入失败: {e}"))
-            })?;
+        if let Err(e) = worksheet.write_string_with_format(0, col as u16, *header, &header_format) {
+            error!("XLSX 写入失败: {}", e);
+            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                ErrorCode::ExportFailed,
+                format!("XLSX 写入失败: {e}"),
+            )));
+        }
     }
 
     // 写入数据
@@ -136,10 +147,16 @@ fn export_xlsx(users: &[crate::models::users::entities::User]) -> ActixResult<Ht
     }
 
     // 生成二进制数据
-    let buffer = workbook.save_to_buffer().map_err(|e| {
-        error!("XLSX 生成失败: {}", e);
-        actix_web::error::ErrorInternalServerError(format!("XLSX 生成失败: {e}"))
-    })?;
+    let buffer = match workbook.save_to_buffer() {
+        Ok(b) => b,
+        Err(e) => {
+            error!("XLSX 生成失败: {}", e);
+            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                ErrorCode::ExportFailed,
+                format!("XLSX 生成失败: {e}"),
+            )));
+        }
+    };
 
     Ok(HttpResponse::Ok()
         .content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -151,29 +168,39 @@ fn generate_template_csv() -> ActixResult<HttpResponse> {
     let mut wtr = csv::Writer::from_writer(vec![]);
 
     // 写入表头
-    wtr.write_record(["username", "email", "password", "role", "display_name"])
-        .map_err(|e| {
-            error!("CSV 写入失败: {}", e);
-            actix_web::error::ErrorInternalServerError(format!("CSV 写入失败: {e}"))
-        })?;
+    if let Err(e) = wtr.write_record(["username", "email", "password", "role", "display_name"]) {
+        error!("CSV 写入失败: {}", e);
+        return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+            ErrorCode::ExportFailed,
+            format!("CSV 写入失败: {e}"),
+        )));
+    }
 
     // 写入示例行
-    wtr.write_record([
+    if let Err(e) = wtr.write_record([
         "example_user",
         "user@example.com",
         "password123",
         "user",
         "示例用户",
-    ])
-    .map_err(|e| {
+    ]) {
         error!("CSV 写入失败: {}", e);
-        actix_web::error::ErrorInternalServerError(format!("CSV 写入失败: {e}"))
-    })?;
+        return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+            ErrorCode::ExportFailed,
+            format!("CSV 写入失败: {e}"),
+        )));
+    }
 
-    let data = wtr.into_inner().map_err(|e| {
-        error!("CSV 生成失败: {}", e);
-        actix_web::error::ErrorInternalServerError(format!("CSV 生成失败: {e}"))
-    })?;
+    let data = match wtr.into_inner() {
+        Ok(d) => d,
+        Err(e) => {
+            error!("CSV 生成失败: {}", e);
+            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                ErrorCode::ExportFailed,
+                format!("CSV 生成失败: {e}"),
+            )));
+        }
+    };
 
     Ok(HttpResponse::Ok()
         .content_type("text/csv; charset=utf-8")
@@ -194,12 +221,13 @@ fn generate_template_xlsx() -> ActixResult<HttpResponse> {
     // 写入表头
     let headers = ["username", "email", "password", "role", "display_name"];
     for (col, header) in headers.iter().enumerate() {
-        worksheet
-            .write_string_with_format(0, col as u16, *header, &header_format)
-            .map_err(|e| {
-                error!("XLSX 写入失败: {}", e);
-                actix_web::error::ErrorInternalServerError(format!("XLSX 写入失败: {e}"))
-            })?;
+        if let Err(e) = worksheet.write_string_with_format(0, col as u16, *header, &header_format) {
+            error!("XLSX 写入失败: {}", e);
+            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                ErrorCode::ExportFailed,
+                format!("XLSX 写入失败: {e}"),
+            )));
+        }
     }
 
     // 写入示例行
@@ -210,10 +238,16 @@ fn generate_template_xlsx() -> ActixResult<HttpResponse> {
     worksheet.write_string(1, 4, "示例用户").ok();
 
     // 生成二进制数据
-    let buffer = workbook.save_to_buffer().map_err(|e| {
-        error!("XLSX 生成失败: {}", e);
-        actix_web::error::ErrorInternalServerError(format!("XLSX 生成失败: {e}"))
-    })?;
+    let buffer = match workbook.save_to_buffer() {
+        Ok(b) => b,
+        Err(e) => {
+            error!("XLSX 生成失败: {}", e);
+            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                ErrorCode::ExportFailed,
+                format!("XLSX 生成失败: {e}"),
+            )));
+        }
+    };
 
     Ok(HttpResponse::Ok()
         .content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

@@ -5,7 +5,7 @@ use actix_web::{HttpRequest, HttpResponse, Result as ActixResult, web};
 use super::{DynamicConfig, SystemService};
 use crate::middlewares::RequireJWT;
 use crate::models::{
-    ApiResponse,
+    ApiResponse, ErrorCode,
     system::{
         requests::{SettingAuditQuery, UpdateSettingRequest},
         responses::{AdminSettingsListResponse, SettingResponse, SystemSettingsResponse},
@@ -42,10 +42,15 @@ pub async fn get_admin_settings(
     _req: HttpRequest,
     storage: web::Data<Arc<dyn Storage>>,
 ) -> ActixResult<HttpResponse> {
-    let settings = storage
-        .list_all_settings()
-        .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;
+    let settings = match storage.list_all_settings().await {
+        Ok(s) => s,
+        Err(e) => {
+            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                ErrorCode::InternalServerError,
+                format!("获取配置列表失败: {e}"),
+            )));
+        }
+    };
 
     let response = AdminSettingsListResponse { settings };
 
@@ -65,8 +70,15 @@ pub async fn update_setting(
     let key = path.0;
 
     // 获取当前用户 ID
-    let user_id = RequireJWT::extract_user_id(&req)
-        .ok_or_else(|| actix_web::error::ErrorUnauthorized("User not authenticated"))?;
+    let user_id = match RequireJWT::extract_user_id(&req) {
+        Some(id) => id,
+        None => {
+            return Ok(HttpResponse::Unauthorized().json(ApiResponse::<()>::error_empty(
+                ErrorCode::Unauthorized,
+                "用户未登录",
+            )));
+        }
+    };
 
     // 获取客户端 IP
     let ip_address = req
@@ -75,10 +87,18 @@ pub async fn update_setting(
         .map(|s| s.to_string());
 
     // 更新配置
-    let setting = storage
+    let setting = match storage
         .update_setting(&key, &body.value, user_id, ip_address)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;
+    {
+        Ok(s) => s,
+        Err(e) => {
+            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                ErrorCode::InternalServerError,
+                format!("更新配置失败: {e}"),
+            )));
+        }
+    };
 
     // 更新缓存
     DynamicConfig::update(&key, &body.value).await;
@@ -97,10 +117,15 @@ pub async fn get_setting_audits(
     query: web::Query<SettingAuditQuery>,
     storage: web::Data<Arc<dyn Storage>>,
 ) -> ActixResult<HttpResponse> {
-    let audits = storage
-        .list_setting_audits(query.into_inner())
-        .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;
+    let audits = match storage.list_setting_audits(query.into_inner()).await {
+        Ok(a) => a,
+        Err(e) => {
+            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                ErrorCode::InternalServerError,
+                format!("获取审计日志失败: {e}"),
+            )));
+        }
+    };
 
     Ok(HttpResponse::Ok().json(ApiResponse::success(
         audits,

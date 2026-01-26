@@ -28,12 +28,13 @@ pub async fn handle_upload(
 
     // 确保上传目录存在
     if !Path::new(upload_dir).exists() {
-        fs::create_dir_all(upload_dir).map_err(|e| {
+        if let Err(e) = fs::create_dir_all(upload_dir) {
             tracing::error!("{}", HWSystemError::file_operation(format!("{e}")));
-            actix_web::error::ErrorInternalServerError(HWSystemError::file_operation(
-                "file create error",
-            ))
-        })?;
+            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                ErrorCode::FileUploadFailed,
+                "创建上传目录失败",
+            )));
+        }
     }
 
     // 文件相关信息
@@ -87,12 +88,18 @@ pub async fn handle_upload(
 
             stored_name = format!("{}-{}.bin", chrono::Utc::now().timestamp(), Uuid::new_v4());
             let file_path = format!("{upload_dir}/{stored_name}");
-            let mut f = File::create(&file_path).map_err(|e| {
-                tracing::error!("{}", HWSystemError::file_operation(format!("{e}")));
-                actix_web::error::ErrorInternalServerError(HWSystemError::file_operation(
-                    "file create error",
-                ))
-            })?;
+            let mut f = match File::create(&file_path) {
+                Ok(file) => file,
+                Err(e) => {
+                    tracing::error!("{}", HWSystemError::file_operation(format!("{e}")));
+                    return Ok(HttpResponse::InternalServerError().json(
+                        ApiResponse::<()>::error_empty(
+                            ErrorCode::FileUploadFailed,
+                            "文件创建失败",
+                        ),
+                    ));
+                }
+            };
 
             let mut total_size: usize = 0;
             while let Some(chunk) = field.next().await {
@@ -121,8 +128,15 @@ pub async fn handle_upload(
 
     let storage = service.get_storage(req);
 
-    let user_id = RequireJWT::extract_user_id(req)
-        .ok_or_else(|| actix_web::error::ErrorUnauthorized("User not authenticated"))?;
+    let user_id = match RequireJWT::extract_user_id(req) {
+        Some(id) => id,
+        None => {
+            return Ok(HttpResponse::Unauthorized().json(ApiResponse::<()>::error_empty(
+                ErrorCode::Unauthorized,
+                "用户未登录",
+            )));
+        }
+    };
 
     let db_file = match storage
         .upload_file(

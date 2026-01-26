@@ -1,6 +1,6 @@
 # 安全设计文档
 
-> 版本：v2.1
+> 版本：v2.2
 > 更新日期：2026-01-26
 
 ---
@@ -125,11 +125,11 @@ let salt = SaltString::generate(&mut OsRng);
 let hash = argon2.hash_password(password.as_bytes(), &salt)?;
 ```
 
-**Argon2 参数**：
+**Argon2 参数**（使用 argon2 crate 默认值）：
 - 算法：Argon2id
-- 内存：64 MB
-- 迭代：3 次
-- 并行度：4
+- 内存：19 MiB
+- 迭代：2 次
+- 并行度：1
 
 ### 3.3 密码验证
 
@@ -229,51 +229,46 @@ let cors = Cors::default()
 
 ## 六、文件上传安全
 
-### 6.1 MIME 类型白名单
+### 6.1 文件扩展名白名单
 
 文件类型白名单通过动态系统设置配置，可在运行时通过管理员接口修改：
 
 ```rust
-// 从数据库动态读取允许的文件类型
+// 从数据库动态读取允许的文件扩展名
 let allowed_types = DynamicConfig::upload_allowed_types().await;
-```
 
-**默认允许的类型**：
-- `image/png`
-- `image/jpeg`
-- `image/gif`
-- `application/pdf`
-- `text/plain`
-- `application/zip`
-- `application/x-zip-compressed`
+// 校验文件扩展名
+let extension = Path::new(&original_name)
+    .extension()
+    .and_then(|ext| ext.to_str())
+    .map(|ext| format!(".{}", ext.to_lowercase()))
+    .unwrap_or_default();
 
-**修改方式**：通过 `PUT /api/v1/system/admin/settings/upload_allowed_types` 接口更新。
-
-### 6.2 魔术字节验证
-
-仅依赖 Content-Type 头不安全，需验证文件实际内容：
-
-```rust
-fn validate_file_magic(content: &[u8], claimed_type: &str) -> bool {
-    match claimed_type {
-        "image/png" => content.starts_with(&[0x89, 0x50, 0x4E, 0x47]),
-        "image/jpeg" => content.starts_with(&[0xFF, 0xD8, 0xFF]),
-        "image/gif" => content.starts_with(b"GIF87a") || content.starts_with(b"GIF89a"),
-        "application/pdf" => content.starts_with(b"%PDF"),
-        "application/zip" => content.starts_with(&[0x50, 0x4B, 0x03, 0x04]),
-        _ => false,
-    }
+if !allowed_types.iter().any(|t| t.to_lowercase() == extension) {
+    return Err("File type not allowed");
 }
 ```
 
-### 6.3 文件大小限制
+**默认允许的扩展名**：
+- `.png`
+- `.jpg`, `.jpeg`
+- `.gif`
+- `.pdf`
+- `.txt`
+- `.zip`
+
+**修改方式**：通过 `PUT /api/v1/system/admin/settings/upload_allowed_types` 接口更新。
+
+**注意**：当前实现仅校验文件扩展名，未实现魔术字节验证。
+
+### 6.2 文件大小限制
 
 ```toml
 [upload]
 max_size = 10485760  # 10 MB
 ```
 
-### 6.4 文件名处理
+### 6.3 文件名处理
 
 ```rust
 fn sanitize_filename(original: &str) -> String {
@@ -286,7 +281,7 @@ fn sanitize_filename(original: &str) -> String {
 }
 ```
 
-### 6.5 存储路径
+### 6.4 存储路径
 
 ```
 uploads/
@@ -507,6 +502,7 @@ log_format = "json" # JSON 格式便于收集
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| v2.2 | 2026-01-26 | 修正文件验证方式（扩展名而非 MIME）；修正 Argon2 参数为实际默认值；移除未实现的魔术字节验证 |
 | v2.1 | 2026-01-26 | 更新文件类型白名单说明（改为动态配置） |
 | v2.0 | 2026-01-24 | 添加速率限制、文件魔术字节验证、安全检查清单 |
 | v1.0 | 2025-01-23 | 初始版本 |

@@ -70,7 +70,7 @@ pub async fn export_class_report(
         Ok(Some(c)) => c,
         Ok(None) => {
             return Ok(HttpResponse::NotFound()
-                .json(ApiResponse::error_empty(ErrorCode::NotFound, "班级不存在")));
+                .json(ApiResponse::error_empty(ErrorCode::ClassNotFound, "班级不存在")));
         }
         Err(e) => {
             return Ok(

@@ -1,6 +1,6 @@
 # 数据库设计文档
 
-> 版本：v2.2
+> 版本：v2.3
 > 更新日期：2026-01-26
 > 数据库：SQLite（开发）/ PostgreSQL（生产）
 
@@ -462,8 +462,9 @@ CREATE INDEX idx_settings_audit_changed_at ON system_settings_audit(changed_at D
 | notifications | idx_notifications_user_id | user_id | NORMAL | 查询用户通知 |
 | notifications | idx_notifications_user_is_read | (user_id, is_read) | COMPOSITE | 查询未读通知 |
 | notifications | idx_notifications_created_at | created_at DESC | NORMAL | 按时间排序 |
-| system_settings_audit | idx_settings_audit_key | setting_key | NORMAL | 按设置键查询 |
-| system_settings_audit | idx_settings_audit_changed_at | changed_at DESC | NORMAL | 按时间排序 |
+| system_settings_audit | idx_system_settings_audit_setting_key | setting_key | NORMAL | 按设置键查询 |
+| system_settings_audit | idx_system_settings_audit_changed_at | changed_at DESC | NORMAL | 按时间排序 |
+| system_settings_audit | idx_system_settings_audit_changed_by | changed_by | NORMAL | 按变更者筛选 |
 
 ### 4.2 复合索引说明
 
@@ -586,6 +587,32 @@ pub enum NotificationType {
 
 数据库存储：`"homework_created"` / `"homework_updated"` / ...
 
+### 6.6 SettingValueType（设置值类型）
+
+```rust
+pub enum SettingValueType {
+    String,    // 字符串
+    Integer,   // 整数
+    Boolean,   // 布尔值
+    JsonArray, // JSON 数组
+}
+```
+
+数据库存储：`"string"` / `"integer"` / `"boolean"` / `"json_array"`
+
+### 6.7 ReferenceType（通知关联类型）
+
+```rust
+pub enum ReferenceType {
+    Homework,   // 作业
+    Submission, // 提交
+    Grade,      // 评分
+    Class,      // 班级
+}
+```
+
+数据库存储：`"homework"` / `"submission"` / `"grade"` / `"class"`
+
 ---
 
 ## 七、查询示例
@@ -674,6 +701,7 @@ WHERE cu.class_id = (SELECT class_id FROM homeworks WHERE id = ?)
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| v2.3 | 2026-01-26 | 修正 system_settings_audit 索引命名；添加 changed_by 索引；补充 SettingValueType 和 ReferenceType 枚举定义 |
 | v2.2 | 2026-01-26 | 补充 system_settings 和 system_settings_audit 表；补充 users 表的 avatar_url 和 last_login 字段；修正索引命名 |
 | v2.1 | 2026-01-24 | 修正 ID 字段类型：TEXT (UUID) → INTEGER (自增主键)，与实际代码保持一致 |
 | v2.0 | 2026-01-24 | 重构 submissions 和 grades 表；新增附件关联表和通知表 |
