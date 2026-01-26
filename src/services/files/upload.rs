@@ -13,17 +13,18 @@ use crate::errors::HWSystemError;
 use crate::middlewares::RequireJWT;
 use crate::models::ErrorCode;
 use crate::models::{ApiResponse, files::responses::FileUploadResponse};
+use crate::services::system::DynamicConfig;
 
 pub async fn handle_upload(
     service: &FileService,
     req: &HttpRequest,
     mut payload: Multipart,
 ) -> ActixResult<HttpResponse> {
-    // 获取配置
+    // 获取配置（静态配置从 AppConfig，动态配置从 DynamicConfig）
     let config = AppConfig::get();
     let upload_dir = &config.upload.dir;
-    let max_size = config.upload.max_size;
-    let allowed_types = &config.upload.allowed_types;
+    let max_size = DynamicConfig::upload_max_size().await;
+    let allowed_types = DynamicConfig::upload_allowed_types().await;
 
     // 确保上传目录存在
     if !Path::new(upload_dir).exists() {

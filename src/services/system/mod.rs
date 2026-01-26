@@ -1,4 +1,7 @@
 pub mod settings;
+pub mod settings_cache;
+
+pub use settings_cache::DynamicConfig;
 
 use actix_web::{HttpRequest, HttpResponse, Result as ActixResult};
 

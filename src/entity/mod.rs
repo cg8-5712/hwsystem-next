@@ -14,4 +14,6 @@ pub mod homeworks;
 pub mod notifications;
 pub mod submission_files;
 pub mod submissions;
+pub mod system_settings;
+pub mod system_settings_audit;
 pub mod users;

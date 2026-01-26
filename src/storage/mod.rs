@@ -35,6 +35,9 @@ use crate::models::{
             UserSubmissionHistoryItem,
         },
     },
+    system::{
+        entities::SystemSetting, requests::SettingAuditQuery, responses::SettingAuditListResponse,
+    },
     users::{
         entities::{User, UserRole, UserStatus},
         requests::{CreateUserRequest, UpdateUserRequest, UserListQuery},
@@ -333,6 +336,35 @@ pub trait Storage: Send + Sync {
     async fn mark_all_notifications_as_read(&self, user_id: i64) -> Result<i64>;
     /// 删除通知
     async fn delete_notification(&self, notification_id: i64) -> Result<bool>;
+
+    // ============================================
+    // 系统设置管理方法
+    // ============================================
+
+    /// 获取所有设置
+    async fn list_all_settings(&self) -> Result<Vec<SystemSetting>>;
+    /// 通过 key 获取设置
+    async fn get_setting_by_key(&self, key: &str) -> Result<Option<SystemSetting>>;
+    /// 更新设置
+    async fn update_setting(
+        &self,
+        key: &str,
+        value: &str,
+        user_id: i64,
+        ip_address: Option<String>,
+    ) -> Result<SystemSetting>;
+    /// 批量更新设置
+    async fn batch_update_settings(
+        &self,
+        updates: Vec<(String, String)>,
+        user_id: i64,
+        ip_address: Option<String>,
+    ) -> Result<Vec<SystemSetting>>;
+    /// 获取审计日志
+    async fn list_setting_audits(
+        &self,
+        query: SettingAuditQuery,
+    ) -> Result<SettingAuditListResponse>;
 }
 
 pub async fn create_storage() -> Result<Arc<dyn Storage>> {

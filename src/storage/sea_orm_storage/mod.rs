@@ -9,6 +9,7 @@ mod grades;
 mod homeworks;
 mod notifications;
 mod submissions;
+mod system_settings;
 mod users;
 
 use crate::config::AppConfig;
@@ -587,5 +588,50 @@ impl Storage for SeaOrmStorage {
 
     async fn delete_notification(&self, notification_id: i64) -> Result<bool> {
         self.delete_notification_impl(notification_id).await
+    }
+
+    // ============================================
+    // 系统设置模块
+    // ============================================
+
+    async fn list_all_settings(
+        &self,
+    ) -> Result<Vec<crate::models::system::entities::SystemSetting>> {
+        self.list_all_settings_impl().await
+    }
+
+    async fn get_setting_by_key(
+        &self,
+        key: &str,
+    ) -> Result<Option<crate::models::system::entities::SystemSetting>> {
+        self.get_setting_by_key_impl(key).await
+    }
+
+    async fn update_setting(
+        &self,
+        key: &str,
+        value: &str,
+        user_id: i64,
+        ip_address: Option<String>,
+    ) -> Result<crate::models::system::entities::SystemSetting> {
+        self.update_setting_impl(key, value, user_id, ip_address)
+            .await
+    }
+
+    async fn batch_update_settings(
+        &self,
+        updates: Vec<(String, String)>,
+        user_id: i64,
+        ip_address: Option<String>,
+    ) -> Result<Vec<crate::models::system::entities::SystemSetting>> {
+        self.batch_update_settings_impl(updates, user_id, ip_address)
+            .await
+    }
+
+    async fn list_setting_audits(
+        &self,
+        query: crate::models::system::requests::SettingAuditQuery,
+    ) -> Result<crate::models::system::responses::SettingAuditListResponse> {
+        self.list_setting_audits_impl(query).await
     }
 }

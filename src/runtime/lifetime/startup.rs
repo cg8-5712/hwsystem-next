@@ -2,6 +2,7 @@ use crate::cache::{ObjectCache, register::get_object_cache_plugin};
 use crate::config::AppConfig;
 use crate::models::users::entities::UserRole;
 use crate::models::users::requests::CreateUserRequest;
+use crate::services::system::DynamicConfig;
 use crate::storage::Storage;
 use crate::utils::password::hash_password;
 use std::sync::Arc;
@@ -84,6 +85,26 @@ fn generate_random_password(length: usize) -> String {
         .collect()
 }
 
+/// 初始化动态配置缓存
+/// 从数据库加载配置并初始化全局缓存
+async fn init_dynamic_config(storage: &Arc<dyn Storage>) {
+    match storage.list_all_settings().await {
+        Ok(settings) => {
+            let settings_vec: Vec<(String, String)> =
+                settings.into_iter().map(|s| (s.key, s.value)).collect();
+            DynamicConfig::init(settings_vec).await;
+        }
+        Err(e) => {
+            warn!(
+                "Failed to load dynamic config from database: {}, using defaults",
+                e
+            );
+            // 使用空配置初始化，DynamicConfig 会回退到 AppConfig
+            DynamicConfig::init(vec![]).await;
+        }
+    }
+}
+
 /// 初始化默认管理员账号
 /// 如果数据库中没有任何用户，则创建一个默认的 admin 账号
 async fn seed_admin(storage: &Arc<dyn Storage>) {
@@ -164,6 +185,9 @@ pub async fn prepare_server_startup() -> StartupContext {
         .await
         .expect("Failed to create storage backend");
     warn!("Storage backend initialized and migrations completed");
+
+    // 初始化动态配置缓存
+    init_dynamic_config(&storage).await;
 
     // 初始化默认管理员账号（如果需要）
     seed_admin(&storage).await;

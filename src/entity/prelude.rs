@@ -22,4 +22,11 @@ pub use super::submission_files::{
 pub use super::submissions::{
     ActiveModel as SubmissionActiveModel, Entity as Submissions, Model as SubmissionModel,
 };
+pub use super::system_settings::{
+    ActiveModel as SystemSettingActiveModel, Entity as SystemSettings, Model as SystemSettingModel,
+};
+pub use super::system_settings_audit::{
+    ActiveModel as SystemSettingAuditActiveModel, Entity as SystemSettingsAudit,
+    Model as SystemSettingAuditModel,
+};
 pub use super::users::{ActiveModel as UserActiveModel, Entity as Users, Model as UserModel};

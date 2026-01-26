@@ -1,6 +1,9 @@
 use serde::Serialize;
 use ts_rs::TS;
 
+use super::entities::{SettingAudit, SystemSetting};
+use crate::models::common::PaginationInfo;
+
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "../frontend/src/types/generated/system.ts")]
 pub struct SystemSettingsResponse {
@@ -17,4 +20,26 @@ pub struct SystemSettingsResponse {
 pub struct WebSocketStatusResponse {
     pub online_users: usize,
     pub status: String,
+}
+
+/// 管理员配置列表响应
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/system.ts")]
+pub struct AdminSettingsListResponse {
+    pub settings: Vec<SystemSetting>,
+}
+
+/// 单个配置响应
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/system.ts")]
+pub struct SettingResponse {
+    pub setting: SystemSetting,
+}
+
+/// 审计日志列表响应
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "../frontend/src/types/generated/system.ts")]
+pub struct SettingAuditListResponse {
+    pub audits: Vec<SettingAudit>,
+    pub pagination: PaginationInfo,
 }
