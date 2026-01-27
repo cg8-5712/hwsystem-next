@@ -45,10 +45,12 @@ pub async fn get_admin_settings(
     let settings = match storage.list_all_settings().await {
         Ok(s) => s,
         Err(e) => {
-            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
-                ErrorCode::InternalServerError,
-                format!("获取配置列表失败: {e}"),
-            )));
+            return Ok(
+                HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                    ErrorCode::InternalServerError,
+                    format!("获取配置列表失败: {e}"),
+                )),
+            );
         }
     };
 
@@ -73,10 +75,12 @@ pub async fn update_setting(
     let user_id = match RequireJWT::extract_user_id(&req) {
         Some(id) => id,
         None => {
-            return Ok(HttpResponse::Unauthorized().json(ApiResponse::<()>::error_empty(
-                ErrorCode::Unauthorized,
-                "用户未登录",
-            )));
+            return Ok(
+                HttpResponse::Unauthorized().json(ApiResponse::<()>::error_empty(
+                    ErrorCode::Unauthorized,
+                    "用户未登录",
+                )),
+            );
         }
     };
 
@@ -93,10 +97,12 @@ pub async fn update_setting(
     {
         Ok(s) => s,
         Err(e) => {
-            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
-                ErrorCode::InternalServerError,
-                format!("更新配置失败: {e}"),
-            )));
+            return Ok(
+                HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                    ErrorCode::InternalServerError,
+                    format!("更新配置失败: {e}"),
+                )),
+            );
         }
     };
 
@@ -120,10 +126,12 @@ pub async fn get_setting_audits(
     let audits = match storage.list_setting_audits(query.into_inner()).await {
         Ok(a) => a,
         Err(e) => {
-            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
-                ErrorCode::InternalServerError,
-                format!("获取审计日志失败: {e}"),
-            )));
+            return Ok(
+                HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                    ErrorCode::InternalServerError,
+                    format!("获取审计日志失败: {e}"),
+                )),
+            );
         }
     };
 

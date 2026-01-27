@@ -14,6 +14,7 @@ use crate::middlewares::RequireJWT;
 use crate::models::ErrorCode;
 use crate::models::{ApiResponse, files::responses::FileUploadResponse};
 use crate::services::system::DynamicConfig;
+use crate::utils::validate_magic_bytes;
 
 pub async fn handle_upload(
     service: &FileService,
@@ -27,14 +28,16 @@ pub async fn handle_upload(
     let allowed_types = DynamicConfig::upload_allowed_types().await;
 
     // 确保上传目录存在
-    if !Path::new(upload_dir).exists() {
-        if let Err(e) = fs::create_dir_all(upload_dir) {
-            tracing::error!("{}", HWSystemError::file_operation(format!("{e}")));
-            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+    if !Path::new(upload_dir).exists()
+        && let Err(e) = fs::create_dir_all(upload_dir)
+    {
+        tracing::error!("{}", HWSystemError::file_operation(format!("{e}")));
+        return Ok(
+            HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
                 ErrorCode::FileUploadFailed,
                 "创建上传目录失败",
-            )));
-        }
+            )),
+        );
     }
 
     // 文件相关信息
@@ -93,17 +96,28 @@ pub async fn handle_upload(
                 Err(e) => {
                     tracing::error!("{}", HWSystemError::file_operation(format!("{e}")));
                     return Ok(HttpResponse::InternalServerError().json(
-                        ApiResponse::<()>::error_empty(
-                            ErrorCode::FileUploadFailed,
-                            "文件创建失败",
-                        ),
+                        ApiResponse::<()>::error_empty(ErrorCode::FileUploadFailed, "文件创建失败"),
                     ));
                 }
             };
 
             let mut total_size: usize = 0;
+            let mut first_chunk = true;
             while let Some(chunk) = field.next().await {
                 let data = chunk?;
+
+                // 第一个 chunk 时验证魔术字节
+                if first_chunk {
+                    first_chunk = false;
+                    if !validate_magic_bytes(&data, &extension) {
+                        let _ = fs::remove_file(&file_path);
+                        return Ok(HttpResponse::BadRequest().json(ApiResponse::error_empty(
+                            ErrorCode::FileTypeNotAllowed,
+                            "文件内容与扩展名不匹配",
+                        )));
+                    }
+                }
+
                 total_size += data.len();
                 // 校验大小
                 if total_size > max_size {
@@ -131,10 +145,12 @@ pub async fn handle_upload(
     let user_id = match RequireJWT::extract_user_id(req) {
         Some(id) => id,
         None => {
-            return Ok(HttpResponse::Unauthorized().json(ApiResponse::<()>::error_empty(
-                ErrorCode::Unauthorized,
-                "用户未登录",
-            )));
+            return Ok(
+                HttpResponse::Unauthorized().json(ApiResponse::<()>::error_empty(
+                    ErrorCode::Unauthorized,
+                    "用户未登录",
+                )),
+            );
         }
     };
 

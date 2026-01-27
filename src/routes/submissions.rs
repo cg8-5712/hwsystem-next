@@ -126,6 +126,11 @@ pub async fn list_user_submissions_for_teacher(
         .await
 }
 
+// 获取提交的评分
+pub async fn get_submission_grade(req: HttpRequest, path: SafeIDI64) -> ActixResult<HttpResponse> {
+    SUBMISSION_SERVICE.get_submission_grade(&req, path.0).await
+}
+
 // 配置路由
 pub fn configure_submissions_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -134,7 +139,8 @@ pub fn configure_submissions_routes(cfg: &mut web::ServiceConfig) {
             .route("", web::get().to(list_submissions))
             .route("", web::post().to(create_submission))
             .route("/{id}", web::get().to(get_submission))
-            .route("/{id}", web::delete().to(delete_submission)),
+            .route("/{id}", web::delete().to(delete_submission))
+            .route("/{id}/grade", web::get().to(get_submission_grade)),
     );
 
     // 作业相关的提交路由

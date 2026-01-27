@@ -10,6 +10,8 @@ pub struct AppConfig {
     pub cache: CacheConfig,
     pub cors: CorsConfig,
     pub upload: UploadConfig,
+    #[serde(default)]
+    pub argon2: Argon2Config,
 }
 
 /// 应用设置
@@ -102,4 +104,22 @@ pub struct UploadConfig {
     pub dir: String,                // 上传目录
     pub max_size: usize,            // 单文件最大字节数
     pub allowed_types: Vec<String>, // 允许的MIME类型或扩展名
+}
+
+/// Argon2 密码哈希配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Argon2Config {
+    pub memory_cost: u32, // 内存消耗 (KiB)，默认 65536 (64MB)
+    pub time_cost: u32,   // 迭代次数，默认 3
+    pub parallelism: u32, // 并行度，默认 4
+}
+
+impl Default for Argon2Config {
+    fn default() -> Self {
+        Self {
+            memory_cost: 65536, // 64MB
+            time_cost: 3,
+            parallelism: 4,
+        }
+    }
 }

@@ -61,10 +61,12 @@ fn export_csv(users: &[crate::models::users::entities::User]) -> ActixResult<Htt
         "created_at",
     ]) {
         error!("CSV 写入失败: {}", e);
-        return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
-            ErrorCode::ExportFailed,
-            format!("CSV 写入失败: {e}"),
-        )));
+        return Ok(
+            HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                ErrorCode::ExportFailed,
+                format!("CSV 写入失败: {e}"),
+            )),
+        );
     }
 
     // 写入数据
@@ -79,10 +81,12 @@ fn export_csv(users: &[crate::models::users::entities::User]) -> ActixResult<Htt
             user.created_at.to_rfc3339(),
         ]) {
             error!("CSV 写入失败: {}", e);
-            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
-                ErrorCode::ExportFailed,
-                format!("CSV 写入失败: {e}"),
-            )));
+            return Ok(
+                HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                    ErrorCode::ExportFailed,
+                    format!("CSV 写入失败: {e}"),
+                )),
+            );
         }
     }
 
@@ -90,10 +94,12 @@ fn export_csv(users: &[crate::models::users::entities::User]) -> ActixResult<Htt
         Ok(d) => d,
         Err(e) => {
             error!("CSV 生成失败: {}", e);
-            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
-                ErrorCode::ExportFailed,
-                format!("CSV 生成失败: {e}"),
-            )));
+            return Ok(
+                HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                    ErrorCode::ExportFailed,
+                    format!("CSV 生成失败: {e}"),
+                )),
+            );
         }
     };
 
@@ -123,10 +129,12 @@ fn export_xlsx(users: &[crate::models::users::entities::User]) -> ActixResult<Ht
     for (col, header) in headers.iter().enumerate() {
         if let Err(e) = worksheet.write_string_with_format(0, col as u16, *header, &header_format) {
             error!("XLSX 写入失败: {}", e);
-            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
-                ErrorCode::ExportFailed,
-                format!("XLSX 写入失败: {e}"),
-            )));
+            return Ok(
+                HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                    ErrorCode::ExportFailed,
+                    format!("XLSX 写入失败: {e}"),
+                )),
+            );
         }
     }
 
@@ -151,10 +159,12 @@ fn export_xlsx(users: &[crate::models::users::entities::User]) -> ActixResult<Ht
         Ok(b) => b,
         Err(e) => {
             error!("XLSX 生成失败: {}", e);
-            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
-                ErrorCode::ExportFailed,
-                format!("XLSX 生成失败: {e}"),
-            )));
+            return Ok(
+                HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                    ErrorCode::ExportFailed,
+                    format!("XLSX 生成失败: {e}"),
+                )),
+            );
         }
     };
 
@@ -170,10 +180,12 @@ fn generate_template_csv() -> ActixResult<HttpResponse> {
     // 写入表头
     if let Err(e) = wtr.write_record(["username", "email", "password", "role", "display_name"]) {
         error!("CSV 写入失败: {}", e);
-        return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
-            ErrorCode::ExportFailed,
-            format!("CSV 写入失败: {e}"),
-        )));
+        return Ok(
+            HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                ErrorCode::ExportFailed,
+                format!("CSV 写入失败: {e}"),
+            )),
+        );
     }
 
     // 写入示例行
@@ -185,20 +197,24 @@ fn generate_template_csv() -> ActixResult<HttpResponse> {
         "示例用户",
     ]) {
         error!("CSV 写入失败: {}", e);
-        return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
-            ErrorCode::ExportFailed,
-            format!("CSV 写入失败: {e}"),
-        )));
+        return Ok(
+            HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                ErrorCode::ExportFailed,
+                format!("CSV 写入失败: {e}"),
+            )),
+        );
     }
 
     let data = match wtr.into_inner() {
         Ok(d) => d,
         Err(e) => {
             error!("CSV 生成失败: {}", e);
-            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
-                ErrorCode::ExportFailed,
-                format!("CSV 生成失败: {e}"),
-            )));
+            return Ok(
+                HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                    ErrorCode::ExportFailed,
+                    format!("CSV 生成失败: {e}"),
+                )),
+            );
         }
     };
 
@@ -223,10 +239,12 @@ fn generate_template_xlsx() -> ActixResult<HttpResponse> {
     for (col, header) in headers.iter().enumerate() {
         if let Err(e) = worksheet.write_string_with_format(0, col as u16, *header, &header_format) {
             error!("XLSX 写入失败: {}", e);
-            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
-                ErrorCode::ExportFailed,
-                format!("XLSX 写入失败: {e}"),
-            )));
+            return Ok(
+                HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                    ErrorCode::ExportFailed,
+                    format!("XLSX 写入失败: {e}"),
+                )),
+            );
         }
     }
 
@@ -242,10 +260,12 @@ fn generate_template_xlsx() -> ActixResult<HttpResponse> {
         Ok(b) => b,
         Err(e) => {
             error!("XLSX 生成失败: {}", e);
-            return Ok(HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
-                ErrorCode::ExportFailed,
-                format!("XLSX 生成失败: {e}"),
-            )));
+            return Ok(
+                HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
+                    ErrorCode::ExportFailed,
+                    format!("XLSX 生成失败: {e}"),
+                )),
+            );
         }
     };
 

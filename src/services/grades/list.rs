@@ -56,8 +56,10 @@ pub async fn list_grades(
                         }
                     }
                     _ => {
-                        return Ok(HttpResponse::NotFound()
-                            .json(ApiResponse::error_empty(ErrorCode::HomeworkNotFound, "作业不存在")));
+                        return Ok(HttpResponse::NotFound().json(ApiResponse::error_empty(
+                            ErrorCode::HomeworkNotFound,
+                            "作业不存在",
+                        )));
                     }
                 }
             } else {

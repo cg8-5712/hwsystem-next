@@ -44,6 +44,10 @@ pub async fn update_profile(
         .await
 }
 
+pub async fn logout() -> ActixResult<HttpResponse> {
+    AUTH_SERVICE.logout().await
+}
+
 // 配置路由
 pub fn configure_auth_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -66,6 +70,8 @@ pub fn configure_auth_routes(cfg: &mut web::ServiceConfig) {
                     .wrap(RateLimit::refresh_token())
                     .route(web::post().to(refresh_token)),
             )
+            // 登出端点：不需要 JWT 验证
+            .route("/logout", web::post().to(logout))
             .service(
                 web::scope("")
                     .wrap(middlewares::RequireJWT)

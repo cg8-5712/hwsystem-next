@@ -69,8 +69,10 @@ pub async fn export_class_report(
     let class = match storage.get_class_by_id(class_id).await {
         Ok(Some(c)) => c,
         Ok(None) => {
-            return Ok(HttpResponse::NotFound()
-                .json(ApiResponse::error_empty(ErrorCode::ClassNotFound, "班级不存在")));
+            return Ok(HttpResponse::NotFound().json(ApiResponse::error_empty(
+                ErrorCode::ClassNotFound,
+                "班级不存在",
+            )));
         }
         Err(e) => {
             return Ok(

@@ -47,12 +47,12 @@ pub async fn get_submission_summary(
             );
         }
         Err(e) => {
-            return Ok(HttpResponse::InternalServerError().json(
-                ApiResponse::<()>::error_empty(
+            return Ok(
+                HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
                     ErrorCode::InternalServerError,
                     format!("查询作业失败: {e}"),
-                ),
-            ));
+                )),
+            );
         }
     };
 
@@ -111,12 +111,12 @@ pub async fn get_submission_summary(
     {
         Ok(s) => s,
         Err(e) => {
-            return Ok(HttpResponse::InternalServerError().json(
-                ApiResponse::<()>::error_empty(
+            return Ok(
+                HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
                     ErrorCode::InternalServerError,
                     format!("查询提交概览失败: {e}"),
-                ),
-            ));
+                )),
+            );
         }
     };
 
@@ -157,12 +157,12 @@ pub async fn list_user_submissions_for_teacher(
             );
         }
         Err(e) => {
-            return Ok(HttpResponse::InternalServerError().json(
-                ApiResponse::<()>::error_empty(
+            return Ok(
+                HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
                     ErrorCode::InternalServerError,
                     format!("查询作业失败: {e}"),
-                ),
-            ));
+                )),
+            );
         }
     };
 
@@ -218,12 +218,12 @@ pub async fn list_user_submissions_for_teacher(
     {
         Ok(s) => s,
         Err(e) => {
-            return Ok(HttpResponse::InternalServerError().json(
-                ApiResponse::<()>::error_empty(
+            return Ok(
+                HttpResponse::InternalServerError().json(ApiResponse::<()>::error_empty(
                     ErrorCode::InternalServerError,
                     format!("查询提交历史失败: {e}"),
-                ),
-            ));
+                )),
+            );
         }
     };
 

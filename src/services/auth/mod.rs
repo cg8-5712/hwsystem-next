@@ -1,4 +1,5 @@
 pub mod login;
+pub mod logout;
 pub mod profile;
 pub mod register;
 pub mod token;
@@ -76,5 +77,10 @@ impl AuthService {
         request: &HttpRequest,
     ) -> ActixResult<HttpResponse> {
         profile::handle_update_profile(self, update_request, request).await
+    }
+
+    // 用户登出
+    pub async fn logout(&self) -> ActixResult<HttpResponse> {
+        logout::handle_logout().await
     }
 }

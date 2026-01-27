@@ -29,7 +29,6 @@ pub enum DeadlineFilter {
     All,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export, export_to = "../frontend/src/types/generated/homework.ts")]
 pub struct Homework {

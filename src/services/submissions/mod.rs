@@ -1,6 +1,7 @@
 pub mod create;
 pub mod delete;
 pub mod detail;
+pub mod grade;
 pub mod history;
 pub mod list;
 pub mod summary;
@@ -112,5 +113,14 @@ impl SubmissionService {
         user_id: i64,
     ) -> ActixResult<HttpResponse> {
         summary::list_user_submissions_for_teacher(self, request, homework_id, user_id).await
+    }
+
+    /// 获取提交的评分
+    pub async fn get_submission_grade(
+        &self,
+        request: &HttpRequest,
+        submission_id: i64,
+    ) -> ActixResult<HttpResponse> {
+        grade::get_submission_grade(self, request, submission_id).await
     }
 }

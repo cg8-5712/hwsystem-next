@@ -18,8 +18,10 @@ pub async fn delete_submission(
     let submission = match storage.get_submission_by_id(submission_id).await {
         Ok(Some(sub)) => sub,
         Ok(None) => {
-            return Ok(HttpResponse::NotFound()
-                .json(ApiResponse::error_empty(ErrorCode::SubmissionNotFound, "提交不存在")));
+            return Ok(HttpResponse::NotFound().json(ApiResponse::error_empty(
+                ErrorCode::SubmissionNotFound,
+                "提交不存在",
+            )));
         }
         Err(e) => {
             return Ok(
@@ -49,8 +51,10 @@ pub async fn delete_submission(
 
     match storage.delete_submission(submission_id).await {
         Ok(true) => Ok(HttpResponse::Ok().json(ApiResponse::success_empty("提交已撤回"))),
-        Ok(false) => Ok(HttpResponse::NotFound()
-            .json(ApiResponse::error_empty(ErrorCode::SubmissionNotFound, "提交不存在"))),
+        Ok(false) => Ok(HttpResponse::NotFound().json(ApiResponse::error_empty(
+            ErrorCode::SubmissionNotFound,
+            "提交不存在",
+        ))),
         Err(e) => Ok(
             HttpResponse::InternalServerError().json(ApiResponse::error_empty(
                 ErrorCode::InternalServerError,

@@ -47,8 +47,10 @@ pub async fn export_homework_stats(
     let homework = match storage.get_homework_by_id(homework_id).await {
         Ok(Some(hw)) => hw,
         Ok(None) => {
-            return Ok(HttpResponse::NotFound()
-                .json(ApiResponse::error_empty(ErrorCode::HomeworkNotFound, "作业不存在")));
+            return Ok(HttpResponse::NotFound().json(ApiResponse::error_empty(
+                ErrorCode::HomeworkNotFound,
+                "作业不存在",
+            )));
         }
         Err(e) => {
             return Ok(
