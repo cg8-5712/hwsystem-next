@@ -13,7 +13,7 @@ use actix_web::{HttpRequest, HttpResponse, Result as ActixResult};
 use std::sync::Arc;
 
 use crate::models::homeworks::requests::{
-    AllHomeworksQuery, CreateHomeworkRequest, HomeworkListQuery, UpdateHomeworkRequest,
+    AllHomeworksParams, CreateHomeworkRequest, HomeworkListParams, UpdateHomeworkRequest,
 };
 use crate::storage::Storage;
 
@@ -41,7 +41,7 @@ impl HomeworkService {
     pub async fn list_homeworks(
         &self,
         request: &HttpRequest,
-        query: HomeworkListQuery,
+        query: HomeworkListParams,
     ) -> ActixResult<HttpResponse> {
         list::list_homeworks(self, request, query).await
     }
@@ -112,7 +112,7 @@ impl HomeworkService {
     pub async fn list_all_homeworks(
         &self,
         request: &HttpRequest,
-        query: AllHomeworksQuery,
+        query: AllHomeworksParams,
     ) -> ActixResult<HttpResponse> {
         list_all::list_all_homeworks(self, request, query).await
     }

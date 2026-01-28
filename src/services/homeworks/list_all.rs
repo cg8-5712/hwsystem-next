@@ -3,7 +3,7 @@
 use actix_web::{HttpRequest, HttpResponse, Result as ActixResult};
 
 use crate::middlewares::RequireJWT;
-use crate::models::homeworks::requests::AllHomeworksQuery;
+use crate::models::homeworks::requests::{AllHomeworksParams, AllHomeworksQuery};
 use crate::models::users::entities::UserRole;
 use crate::models::{ApiResponse, ErrorCode};
 use crate::services::homeworks::HomeworkService;
@@ -11,7 +11,7 @@ use crate::services::homeworks::HomeworkService;
 pub async fn list_all_homeworks(
     service: &HomeworkService,
     request: &HttpRequest,
-    query: AllHomeworksQuery,
+    query: AllHomeworksParams,
 ) -> ActixResult<HttpResponse> {
     let storage = service.get_storage(request);
 
@@ -29,9 +29,19 @@ pub async fn list_all_homeworks(
     // 判断是否为教师视角
     let is_teacher = matches!(current_user.role, UserRole::Teacher | UserRole::Admin);
 
+    // 转换为存储层查询参数
+    let storage_query = AllHomeworksQuery {
+        page: Some(query.pagination.page),
+        size: Some(query.pagination.size),
+        status: query.status,
+        deadline_filter: query.deadline_filter,
+        search: query.search,
+        include_stats: query.include_stats,
+    };
+
     // 调用 storage 层
     match storage
-        .list_all_homeworks(current_user.id, is_teacher, query)
+        .list_all_homeworks(current_user.id, is_teacher, storage_query)
         .await
     {
         Ok(resp) => Ok(HttpResponse::Ok().json(ApiResponse::success(resp, "获取作业列表成功"))),

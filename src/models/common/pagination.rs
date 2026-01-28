@@ -88,11 +88,30 @@ fn default_page() -> i64 {
 }
 
 fn default_size() -> i64 {
-    10
+    20
 }
 
 impl Default for PaginationQuery {
     fn default() -> Self {
-        Self { page: 1, size: 10 }
+        Self { page: 1, size: 20 }
+    }
+}
+
+impl PaginationQuery {
+    /// 验证并规范化分页参数
+    /// - page 必须 >= 1
+    /// - size 必须在 1-100 之间
+    pub fn validate(&mut self) {
+        // 分页号至少为1
+        if self.page < 1 {
+            self.page = 1;
+        }
+
+        // 每页数量限制
+        if self.size < 1 {
+            self.size = 1;
+        } else if self.size > 100 {
+            self.size = 100;
+        }
     }
 }

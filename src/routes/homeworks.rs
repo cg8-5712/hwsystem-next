@@ -3,7 +3,7 @@ use once_cell::sync::Lazy;
 
 use crate::middlewares::{self, RequireJWT};
 use crate::models::homeworks::requests::{
-    AllHomeworksQuery, CreateHomeworkRequest, HomeworkListQuery, UpdateHomeworkRequest,
+    AllHomeworksParams, CreateHomeworkRequest, HomeworkListParams, UpdateHomeworkRequest,
 };
 use crate::models::users::entities::UserRole;
 use crate::models::{ApiResponse, ErrorCode};
@@ -16,7 +16,7 @@ static HOMEWORK_SERVICE: Lazy<HomeworkService> = Lazy::new(HomeworkService::new_
 // 列出作业
 pub async fn list_homeworks(
     req: HttpRequest,
-    query: web::Query<HomeworkListQuery>,
+    query: web::Query<HomeworkListParams>,
 ) -> ActixResult<HttpResponse> {
     HOMEWORK_SERVICE
         .list_homeworks(&req, query.into_inner())
@@ -109,7 +109,7 @@ pub async fn get_teacher_homework_stats(req: HttpRequest) -> ActixResult<HttpRes
 // 列出所有班级的作业（跨班级）
 pub async fn list_all_homeworks(
     req: HttpRequest,
-    query: web::Query<AllHomeworksQuery>,
+    query: web::Query<AllHomeworksParams>,
 ) -> ActixResult<HttpResponse> {
     HOMEWORK_SERVICE
         .list_all_homeworks(&req, query.into_inner())

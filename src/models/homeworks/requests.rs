@@ -30,7 +30,7 @@ pub struct UpdateHomeworkRequest {
 }
 
 /// 作业列表查询参数（HTTP 请求）
-#[derive(Debug, Deserialize, TS)]
+#[derive(Debug, Clone, Deserialize, TS)]
 #[ts(export, export_to = "../frontend/src/types/generated/homework.ts")]
 pub struct HomeworkListParams {
     #[serde(flatten)]
@@ -43,20 +43,19 @@ pub struct HomeworkListParams {
     pub include_stats: Option<bool>,
 }
 
-/// 作业列表查询参数（存储层）
-#[derive(Debug, Clone, Deserialize)]
+// 用于存储层的内部查询参数
+#[derive(Debug, Clone)]
 pub struct HomeworkListQuery {
     pub page: Option<i64>,
     pub size: Option<i64>,
     pub class_id: Option<i64>,
     pub created_by: Option<i64>,
     pub search: Option<String>,
-    /// 是否包含统计信息
     pub include_stats: Option<bool>,
 }
 
 /// 跨班级作业列表查询参数（HTTP 请求）
-#[derive(Debug, Deserialize, TS)]
+#[derive(Debug, Clone, Deserialize, TS)]
 #[ts(export, export_to = "../frontend/src/types/generated/homework.ts")]
 pub struct AllHomeworksParams {
     #[serde(flatten)]
@@ -72,8 +71,8 @@ pub struct AllHomeworksParams {
     pub include_stats: Option<bool>,
 }
 
-/// 跨班级作业列表查询参数（存储层，也用于 HTTP 请求）
-#[derive(Debug, Clone, Deserialize)]
+// 用于存储层的内部查询参数
+#[derive(Debug, Clone)]
 pub struct AllHomeworksQuery {
     pub page: Option<i64>,
     pub size: Option<i64>,

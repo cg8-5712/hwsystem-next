@@ -1,6 +1,6 @@
 use crate::middlewares::RequireJWT;
 use crate::models::users::entities::UserRole;
-use crate::models::{ApiResponse, ErrorCode, homeworks::requests::HomeworkListQuery};
+use crate::models::{ApiResponse, ErrorCode, homeworks::requests::{HomeworkListParams, HomeworkListQuery}};
 use actix_web::{HttpRequest, HttpResponse, Result as ActixResult};
 
 use super::HomeworkService;
@@ -8,7 +8,7 @@ use super::HomeworkService;
 pub async fn list_homeworks(
     service: &HomeworkService,
     request: &HttpRequest,
-    query: HomeworkListQuery,
+    query: HomeworkListParams,
 ) -> ActixResult<HttpResponse> {
     let storage = service.get_storage(request);
 
@@ -22,7 +22,14 @@ pub async fn list_homeworks(
     };
 
     // 权限验证逻辑
-    let mut filtered_query = query.clone();
+    let mut filtered_query = HomeworkListQuery {
+        page: Some(query.pagination.page),
+        size: Some(query.pagination.size),
+        class_id: query.class_id,
+        created_by: query.created_by,
+        search: query.search.clone(),
+        include_stats: query.include_stats,
+    };
 
     match current_user.role {
         UserRole::Admin => {

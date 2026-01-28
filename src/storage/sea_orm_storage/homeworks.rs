@@ -83,7 +83,7 @@ impl SeaOrmStorage {
         current_user_id: Option<i64>,
     ) -> Result<HomeworkListResponse> {
         let page = Ord::max(query.page.unwrap_or(1), 1) as u64;
-        let size = query.size.unwrap_or(10).clamp(1, 100) as u64;
+        let size = query.size.unwrap_or(20).clamp(1, 100) as u64;
 
         let mut select = Homeworks::find();
 
@@ -616,7 +616,7 @@ impl SeaOrmStorage {
         query: AllHomeworksQuery,
     ) -> Result<AllHomeworksResponse> {
         let page = Ord::max(query.page.unwrap_or(1), 1) as u64;
-        let size = query.size.unwrap_or(10).clamp(1, 100) as u64;
+        let size = query.size.unwrap_or(20).clamp(1, 100) as u64;
         let now = chrono::Utc::now();
         let now_ts = now.timestamp();
 
